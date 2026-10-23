@@ -1,0 +1,90 @@
+# Blueprint Render (https://render.com/docs/blueprint-spec) — API et worker TogoMobile.
+# Les secrets se saisissent dans le tableau de bord (sync: false) : aucune valeur réelle ici.
+# Dupliquer ce blueprint pour la préproduction (noms suffixés -staging, base et bucket distincts).
+envVarGroups:
+  - name: togomobile-shared
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
+      - key: DATABASE_URL # avec ?sslmode=require&connection_limit=10 (voir docs/DEPLOIEMENT.md §1)
+        sync: false
+      - key: APP_SECRET # 48 caractères aléatoires ; ne jamais le changer ensuite
+        sync: false
+      - key: WEB_URL
+        sync: false
+      - key: ADMIN_URL # https://admin.<domaine> — origine autorisée de l'application d'administration
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: STORAGE_DRIVER
+        value: s3
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PUBLIC_URL
+        sync: false
+      - key: WEB_REVALIDATE_URL # https://www.<domaine>/api/revalidate
+        sync: false
+      - key: REVALIDATE_SECRET # identique à celui du site (Vercel)
+        sync: false
+      - key: MAIL_DRIVER
+        value: resend
+      - key: MAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: REDIS_URL # facultatif ; requis dès plusieurs instances ou WEB_CONCURRENCY > 1
+        sync: false
+
+services:
+  - type: web
+    name: togomobile-api
+    runtime: node
+    region: frankfurt
+    plan: standard
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter backend build
+    # Migrations appliquées une seule fois par déploiement, avant la bascule du trafic (jamais au démarrage
+    # de chaque instance). En cas d'échec, l'ancienne version reste en ligne.
+    preDeployCommand: pnpm --filter backend deploy:migrate
+    startCommand: pnpm --filter backend start:prod
+    healthCheckPath: /api/v1/health
+    envVars:
+      - fromGroup: togomobile-shared
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        value: 2
+      - key: WEB_CONCURRENCY # processus par instance (≈ nombre de cœurs)
+        value: 1
+      - key: WORKER_IN_PROCESS
+        value: false
+      - key: PUBLIC_CACHE_SECONDS # cache CDN des lectures publiques de l'API ; 0 si l'API n'est pas derrière un CDN
+        value: 30
+      - key: METRICS_TOKEN
+        sync: false
+      - key: SLOW_QUERY_MS
+        value: 500
+
+  # Traitements asynchrones : médias (variantes, vidéo), invalidation du cache, nettoyage, promotions.
+  - type: worker
+    name: togomobile-worker
+    runtime: node
+    region: frankfurt
+    plan: starter
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter backend build
+    startCommand: pnpm --filter backend start:worker
+    envVars:
+      - fromGroup: togomobile-shared
+      - key: WORKER_CONCURRENCY
+        value: 2
+      - key: MEDIA_MAX_VIDEO_SECONDS
+        value: 90

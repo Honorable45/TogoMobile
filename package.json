@@ -1,0 +1,23 @@
+{
+  "name": "togomobile",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter backend --filter frontend --filter admin dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build && pnpm --filter admin build",
+    "test": "pnpm --filter backend test && pnpm --filter frontend test:e2e",
+    "db:migrate": "pnpm --filter backend prisma:migrate",
+    "db:seed": "pnpm --filter backend seed",
+    "db:seed:clear": "pnpm --filter backend seed:clear",
+    "admin:create": "pnpm --filter backend admin:create",
+    "typecheck": "pnpm --filter backend exec tsc --noEmit -p tsconfig.json && pnpm --filter frontend typecheck && pnpm --filter admin typecheck",
+    "verify": "pnpm typecheck && pnpm --filter backend test && pnpm build"
+  }
+}

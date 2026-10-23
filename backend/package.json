@@ -1,0 +1,70 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "prisma generate && node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "start:prod": "node dist/main.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "seed": "ts-node --transpile-only prisma/seed.ts",
+    "seed:clear": "ts-node --transpile-only prisma/seed.ts --clear",
+    "admin:create": "ts-node --transpile-only scripts/create-admin.ts",
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand test/unit",
+    "test:e2e": "jest --runInBand test/e2e",
+    "seed:demo": "ts-node --transpile-only prisma/seed.ts --demo",
+    "seed:clear-e2e": "ts-node --transpile-only prisma/seed.ts --clear-e2e",
+    "start:worker": "node dist/worker.js",
+    "deploy:migrate": "prisma migrate deploy",
+    "maintenance": "ts-node --transpile-only scripts/maintenance.ts"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@nestjs/common": "^11",
+    "@nestjs/core": "^11",
+    "@nestjs/platform-express": "^11",
+    "@nestjs/swagger": "^11",
+    "@nestjs/throttler": "^6",
+    "@prisma/client": "^6",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^5",
+    "helmet": "^8.3.0",
+    "ioredis": "^5.11.1",
+    "prom-client": "^15",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11",
+    "@nestjs/testing": "^11",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5",
+    "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30",
+    "prisma": "^6",
+    "supertest": "^7.3.1",
+    "ts-jest": "^29.4.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "ffmpeg-static": "^5.2.0"
+  }
+}

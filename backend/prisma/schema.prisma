@@ -1,0 +1,619 @@
+// TogoMobile — modèle de données
+// Montants : entiers en FCFA (XOF, sans subdivision).
+// Dates : stockées en UTC (timestamptz), affichées en Africa/Lome.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["metrics"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Comptes ────────────────────────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String?    @unique // toujours en minuscules
+  phone        String?    @unique // format E.164, ex. +22890123456
+  passwordHash String
+  role         Role       @default(CUSTOMER)
+  status       UserStatus @default(ACTIVE)
+  isDemo       Boolean    @default(false)
+  /// Verrouillage par compte après des échecs de connexion répétés (complète la limite par IP).
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions         Session[]
+  resetTokens      PasswordResetToken[]
+  shop             Shop?
+  productFavorites ProductFavorite[]
+  shopFavorites    ShopFavorite[]
+  reviews          Review[]           @relation("ReviewAuthor")
+  moderatedReviews Review[]           @relation("ReviewModerator")
+  reports          Report[]           @relation("ReportAuthor")
+  handledReports   Report[]           @relation("ReportHandler")
+  declaredSales    Sale[]             @relation("SaleDeclarer")
+  confirmedSales   Sale[]             @relation("SaleBuyer")
+  auditLogs        AuditLog[]
+  priceChanges     PriceHistory[]
+  promotionEvents  PromotionEvent[]
+
+  @@index([role, status])
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique // SHA-256 du jeton de session
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Boutiques ──────────────────────────────────────────────────────────────
+
+enum ShopStatus {
+  PENDING // en attente de validation
+  CHANGES_REQUESTED // corrections demandées par l'administration
+  ACTIVE // validée par l'administration
+  SUSPENDED // suspendue par l'administration
+  CLOSED // fermée temporairement par le vendeur
+  REJECTED // demande refusée
+}
+
+model Shop {
+  id                 String     @id @default(cuid())
+  ownerId            String     @unique
+  name               String
+  slug               String     @unique
+  description        String?
+  logoKey            String?
+  city               String
+  district           String?
+  address            String?
+  phone              String? // E.164
+  whatsapp           String // E.164, numéro utilisé pour les commandes
+  socialLinks        Json       @default("{}") // { facebook, instagram, tiktok, youtube, website }
+  openingHours       String?
+  status             ShopStatus @default(PENDING)
+  statusReason       String?
+  validatedAt        DateTime?
+  identityVerifiedAt DateTime?
+  /// Vendeur de confiance : ses annonces sont publiées sans validation préalable des produits.
+  trustedSeller      Boolean    @default(false)
+  pendingChanges     Json? // modifications sensibles soumises à validation
+  ratingAvg          Float      @default(0)
+  ratingCount        Int        @default(0)
+  isDemo             Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  products   Product[]
+  media      ProductMedia[]
+  promotions Promotion[]
+  favorites  ShopFavorite[]
+  sales      Sale[]
+  reviews    Review[]
+
+  @@index([status, validatedAt])
+}
+
+// ─── Référentiels ───────────────────────────────────────────────────────────
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  featured  Boolean  @default(false) // affichée sur la page d'accueil
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  parentId  String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+// ─── Produits ───────────────────────────────────────────────────────────────
+
+enum ProductCondition {
+  NEW // neuf
+  LIKE_NEW // comme neuf
+  REFURBISHED // reconditionné
+  USED_GOOD // occasion, bon état
+  USED_FAIR // occasion, état correct
+}
+
+enum Availability {
+  AVAILABLE
+  OUT_OF_STOCK
+  TEMPORARILY_UNAVAILABLE
+  WITHDRAWN // retiré de la vente
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Validation des annonces : la validation d'une boutique n'approuve pas ses futurs produits.
+enum ProductModeration {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Product {
+  id              String            @id @default(cuid())
+  reference       String            @unique // référence publique, ex. TM-7KQ2PX
+  slug            String            @unique
+  shopId          String
+  brandId         String
+  categoryId      String?
+  title           String
+  model           String
+  description     String?
+  price           Int // prix habituel en FCFA
+  condition       ProductCondition
+  availability    Availability      @default(AVAILABLE)
+  stock           Int               @default(1)
+  storageGb       Int?
+  ramGb           Int?
+  color           String?
+  warranty        String?
+  accessories     String?
+  defects         String?
+  specs           Json              @default("{}") // caractéristiques techniques facultatives
+  status          PublicationStatus @default(DRAFT)
+  moderation      ProductModeration @default(PENDING)
+  moderationNote  String?
+  moderatedAt     DateTime?
+  publishedAt     DateTime?
+  removedAt       DateTime? // retrait par l'administration
+  removalReason   String?
+  searchText      String            @default("") // texte normalisé pour la recherche
+  ratingAvg       Float             @default(0)
+  ratingCount     Int               @default(0)
+  viewCount       Int               @default(0)
+  whatsappClicks  Int               @default(0)
+  isDemo          Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  shop         Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  brand        Brand             @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category     Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  media        ProductMedia[]
+  promotions   Promotion[]
+  favorites    ProductFavorite[]
+  priceHistory PriceHistory[]
+  sales        Sale[]
+  reviews      Review[]
+  dailyStats   ProductDailyStat[]
+
+  @@index([shopId, status])
+  @@index([status, availability, publishedAt])
+  @@index([moderation, status])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_searchText_trgm")
+  @@index([brandId])
+  @@index([price])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+/// Cycle de vie d'un média : un fichier n'est affiché qu'une fois son traitement terminé (READY).
+enum MediaStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+model ProductMedia {
+  id          String      @id @default(cuid())
+  productId   String
+  shopId      String
+  type        MediaType
+  status      MediaStatus @default(READY)
+  key         String      @unique(map: "ProductMedia_key_unique") // grande version (images) ou fichier diffusé (vidéo)
+  mediumKey   String? // version intermédiaire (960 px)
+  thumbKey    String? // vignette (480 px)
+  posterKey   String? // image d'aperçu d'une vidéo
+  originalKey String? // fichier envoyé, supprimé après traitement
+  mime        String
+  size        Int
+  width       Int?
+  height      Int?
+  durationSec Float?
+  transcoded  Boolean     @default(false)
+  error       String?
+  position    Int         @default(0)
+  isPrimary   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+  @@index([status, updatedAt])
+}
+
+enum UploadStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+/// Autorisation d'envoi direct navigateur → stockage (URL présignée). Réserve une place dans la limite de médias.
+model MediaUpload {
+  id        String       @id @default(cuid())
+  productId String
+  shopId    String
+  userId    String
+  type      MediaType
+  key       String       @unique
+  mime      String
+  size      Int
+  tokenHash String?      @unique // pilote local : jeton de l'URL d'envoi
+  status    UploadStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime     @default(now())
+
+  @@index([productId, status])
+  @@index([status, expiresAt])
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+/// File de tâches asynchrones dans PostgreSQL (verrouillage FOR UPDATE SKIP LOCKED) : pas de dépendance à Redis.
+model Job {
+  id          String    @id @default(cuid())
+  type        String
+  payload     Json      @default("{}")
+  status      JobStatus @default(PENDING)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  runAt       DateTime  @default(now())
+  lockedAt    DateTime?
+  lockedBy    String?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, runAt])
+  @@index([type, status])
+}
+
+/// Fichiers à supprimer du stockage (alimentée par un déclencheur SQL, y compris lors des suppressions en cascade).
+model StorageGarbage {
+  id        String   @id @default(cuid())
+  key       String
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  price       Int
+  changedById String?
+  createdAt   DateTime @default(now())
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  changedBy User?   @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+}
+
+model ProductDailyStat {
+  productId      String
+  day            DateTime @db.Date
+  views          Int      @default(0)
+  whatsappClicks Int      @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, day])
+}
+
+// ─── Promotions ─────────────────────────────────────────────────────────────
+
+// Le statut programmée / en cours / terminée est déduit des dates :
+// une promotion ACTIVE n'est appliquée qu'entre startsAt (inclus) et endsAt (exclu).
+enum PromotionStatus {
+  ACTIVE // activée par le vendeur
+  DISABLED // désactivée par le vendeur (ou automatiquement)
+  SUSPENDED // suspendue par l'administration
+}
+
+model Promotion {
+  id               String          @id @default(cuid())
+  productId        String
+  shopId           String
+  promoPrice       Int
+  referencePrice   Int // prix de référence figé à la création (voir docs/REGLES-METIER.md)
+  startsAt         DateTime
+  endsAt           DateTime
+  status           PromotionStatus @default(ACTIVE)
+  conditions       String?
+  statusReason     String?
+  isDemo           Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  product Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  events  PromotionEvent[]
+
+  @@index([productId, status, startsAt, endsAt])
+  @@index([shopId, status, endsAt])
+  @@index([status, startsAt, endsAt])
+}
+
+model PromotionEvent {
+  id          String   @id @default(cuid())
+  promotionId String
+  actorId     String?
+  type        String // CREATED, UPDATED, DISABLED, AUTO_DISABLED, SUSPENDED, REINSTATED
+  data        Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([promotionId, createdAt])
+}
+
+// ─── Favoris ────────────────────────────────────────────────────────────────
+
+model ProductFavorite {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([productId])
+}
+
+model ShopFavorite {
+  userId    String
+  shopId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@id([userId, shopId])
+  @@index([shopId])
+}
+
+// ─── Ventes déclarées et vérification ───────────────────────────────────────
+
+enum SaleStatus {
+  DECLARED // déclarée par le vendeur, pas encore confirmée par le client
+  PENDING_VERIFICATION // confirmée par le client mais signalée par les contrôles : examen administratif
+  VERIFIED // vérifiée selon la procédure (déclaration + confirmation client + contrôles)
+  DISPUTED // contestée
+  CANCELLED // annulée
+}
+
+model Sale {
+  id             String     @id @default(cuid())
+  shopId         String
+  productId      String
+  declaredById   String
+  internalRef    String // référence interne de transaction choisie par le vendeur
+  soldAt         DateTime
+  amount         Int? // montant déclaré (FCFA), facultatif
+  buyerPhoneHash String? // HMAC du numéro de l'acheteur, jamais le numéro en clair
+  buyerPhoneHint String? // deux derniers chiffres, pour aider le vendeur à s'y retrouver
+  buyerId        String? // compte client ayant confirmé l'achat
+  status         SaleStatus @default(DECLARED)
+  flags          Json       @default("[]") // résultats des contrôles automatiques
+  confirmedAt    DateTime?
+  verifiedAt     DateTime?
+  statusNote     String?
+  isDemo         Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  shop       Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  declaredBy User          @relation("SaleDeclarer", fields: [declaredById], references: [id], onDelete: Restrict)
+  buyer      User?         @relation("SaleBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+  tokens     ReviewToken[]
+  review     Review?
+
+  @@unique([shopId, internalRef])
+  @@index([shopId, createdAt])
+  @@index([status])
+  @@index([buyerId])
+  @@index([buyerPhoneHash])
+}
+
+enum ReviewTokenStatus {
+  ACTIVE
+  USED
+  REVOKED
+}
+
+model ReviewToken {
+  id             String            @id @default(cuid())
+  saleId         String
+  tokenHash      String            @unique // SHA-256 du jeton ; le jeton en clair n'est jamais stocké
+  status         ReviewTokenStatus @default(ACTIVE)
+  expiresAt      DateTime
+  usedAt         DateTime?
+  revokedAt      DateTime?
+  revokeReason   String?
+  failedAttempts Int               @default(0)
+  createdAt      DateTime          @default(now())
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId, status])
+}
+
+// ─── Avis ───────────────────────────────────────────────────────────────────
+
+enum ReviewStatus {
+  PENDING // en attente de modération
+  PUBLISHED
+  HIDDEN // masqué par la modération
+  REJECTED
+}
+
+enum ReviewVerification {
+  VERIFIED_PURCHASE // la vente associée a le statut VERIFIED
+  PENDING // vente en cours d'examen
+  REVOKED // vente contestée ou annulée
+}
+
+model Review {
+  id             String             @id @default(cuid())
+  authorId       String
+  productId      String
+  shopId         String
+  saleId         String             @unique // un seul avis par vente
+  rating         Int // 1 à 5 (contrainte CHECK en base)
+  comment        String?
+  commentHash    String? // empreinte normalisée pour détecter les avis répétitifs
+  status         ReviewStatus       @default(PENDING)
+  verification   ReviewVerification @default(PENDING)
+  moderationNote String?
+  moderatedById  String?
+  moderatedAt    DateTime?
+  isDemo         Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  author      User    @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  moderatedBy User?   @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop        Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sale        Sale    @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  @@index([productId, status, createdAt])
+  @@index([shopId, status, createdAt])
+  @@index([commentHash])
+}
+
+// ─── Signalements et audit ──────────────────────────────────────────────────
+
+enum ReportTarget {
+  PRODUCT
+  SHOP
+  REVIEW
+  PROMOTION
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED // action prise
+  DISMISSED // classé sans suite
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  authorId    String
+  targetType  ReportTarget
+  targetId    String
+  reason      String
+  details     String?
+  status      ReportStatus @default(OPEN)
+  decision    String?
+  handledById String?
+  handledAt   DateTime?
+  createdAt   DateTime     @default(now())
+
+  author    User  @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  handledBy User? @relation("ReportHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@unique([authorId, targetType, targetId]) // un signalement par contenu et par personne
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}

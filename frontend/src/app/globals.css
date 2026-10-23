@@ -1,0 +1,225 @@
+@import 'tailwindcss';
+
+/*
+ * Système visuel TogoMobile (style éditorial « papier, encre et verre »).
+ * Tous les jetons sont déclarés ici, une seule fois.
+ *   - brand-*  = accent froid (bleu nuit) ; navy = grands aplats
+ *   - promo-*  = accent chaud (ocre), réservé aux mises en avant
+ */
+@theme {
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Papier et encre */
+  --color-canvas: #f5f3ee; /* paper */
+  --color-paper-2: #edeae3;
+  --color-paper-3: #e4e0d7;
+  --color-surface: #ffffff;
+  --color-ink: #15171c;
+  --color-ink-2: #3c414a;
+  --color-muted: #6b7079;
+  --color-subtle: #6b7079; /* informations secondaires : contraste AA garanti */
+  --color-faint: #9a9ea6; /* uniquement pour les mentions décoratives */
+  --color-line: #e2ded5;
+  --color-line-2: #cdc8bd;
+
+  /* Accent froid */
+  --color-brand-50: #e7ecf5;
+  --color-brand-100: #d3dcec;
+  --color-brand-200: #b3c2dc;
+  --color-brand-500: #1b3d7a;
+  --color-brand-600: #1b3d7a;
+  --color-brand-700: #11295a;
+  --color-brand-800: #0f2147;
+  --color-navy: #0f2147;
+  --color-navy-2: #17305f;
+
+  /* Accent chaud */
+  --color-promo-50: #f7e9dc;
+  --color-promo-100: #eed3bc;
+  --color-promo-600: #c4661f;
+  --color-promo-700: #a4520f;
+  --color-star: #c4661f;
+
+  /* États */
+  --color-ok: #2c6848;
+  --color-ok-50: #e3eee7;
+  --color-warn: #8f5510;
+  --color-warn-50: #f4eadb;
+  --color-danger: #a1342a;
+  --color-danger-50: #f5e3e0;
+  --color-whatsapp: #1f9d55;
+  --color-whatsapp-hover: #188247;
+
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgb(15 33 71 / 0.06), 0 10px 28px -14px rgb(15 33 71 / 0.28);
+  --shadow-pop: 0 1px 2px rgb(21 23 28 / 0.05), 0 12px 32px -12px rgb(21 23 28 / 0.22);
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  --animate-slide-up: slide-up 200ms var(--ease-soft) both;
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    font-size: 15px;
+  }
+  body {
+    @apply font-sans;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+  /* Par défaut un fieldset a min-width: min-content, ce qui fait déborder les formulaires sur mobile. */
+  fieldset {
+    min-width: 0;
+  }
+  ::selection {
+    background: var(--color-brand-50);
+  }
+  img {
+    background-color: var(--color-paper-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Typographie ─────────────────────────────────────────────────────────── */
+
+@utility display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.04;
+  font-optical-sizing: auto;
+}
+
+@utility eyebrow {
+  font-size: 11px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Verre ───────────────────────────────────────────────────────────────── */
+
+/* Sur photo ou fond sombre */
+@utility glass {
+  background: rgb(255 255 255 / 0.14);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    inset 0 -1px 0 rgb(255 255 255 / 0.06),
+    0 10px 30px -12px rgb(8 18 40 / 0.45);
+}
+
+/* Sur fond papier : en-tête, onglets, encadrés */
+@utility glass-light {
+  background: rgb(255 255 255 / 0.62);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 8px 28px -14px rgb(15 33 71 / 0.25);
+}
+
+/* Boutons d'action sur fond clair ou sur photo */
+@utility glass-dark {
+  background: rgb(15 33 71 / 0.8);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 10px 26px -12px rgb(8 18 40 / 0.6);
+}
+
+/* ─── Mouvement ───────────────────────────────────────────────────────────── */
+
+@keyframes reveal-word {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* Mot révélé : le délai est fourni par style={{ animationDelay }} */
+@utility reveal-word {
+  display: inline-block;
+  opacity: 0;
+  animation: reveal-word 700ms var(--ease-soft) forwards;
+}
+
+@utility lift {
+  transition:
+    transform 200ms var(--ease-soft),
+    box-shadow 200ms var(--ease-soft),
+    background-color 200ms var(--ease-soft);
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ─── Mise en page ────────────────────────────────────────────────────────── */
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 16px;
+  @media (width >= 40rem) {
+    padding-inline: 24px;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 32px;
+  }
+}
