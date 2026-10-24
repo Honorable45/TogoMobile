@@ -26,31 +26,31 @@ enum UserStatus {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String?    @unique // toujours en minuscules
-  phone        String?    @unique // format E.164, ex. +22890123456
-  passwordHash String
-  role         Role       @default(CUSTOMER)
-  status       UserStatus @default(ACTIVE)
-  isDemo       Boolean    @default(false)
+  id               String     @id @default(cuid())
+  name             String
+  email            String?    @unique // toujours en minuscules
+  phone            String?    @unique // format E.164, ex. +22890123456
+  passwordHash     String
+  role             Role       @default(CUSTOMER)
+  status           UserStatus @default(ACTIVE)
+  isDemo           Boolean    @default(false)
   /// Verrouillage par compte après des échecs de connexion répétés (complète la limite par IP).
-  failedLoginCount Int       @default(0)
+  failedLoginCount Int        @default(0)
   lockedUntil      DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   sessions         Session[]
   resetTokens      PasswordResetToken[]
   shop             Shop?
   productFavorites ProductFavorite[]
   shopFavorites    ShopFavorite[]
-  reviews          Review[]           @relation("ReviewAuthor")
-  moderatedReviews Review[]           @relation("ReviewModerator")
-  reports          Report[]           @relation("ReportAuthor")
-  handledReports   Report[]           @relation("ReportHandler")
-  declaredSales    Sale[]             @relation("SaleDeclarer")
-  confirmedSales   Sale[]             @relation("SaleBuyer")
+  reviews          Review[]             @relation("ReviewAuthor")
+  moderatedReviews Review[]             @relation("ReviewModerator")
+  reports          Report[]             @relation("ReportAuthor")
+  handledReports   Report[]             @relation("ReportHandler")
+  declaredSales    Sale[]               @relation("SaleDeclarer")
+  confirmedSales   Sale[]               @relation("SaleBuyer")
   auditLogs        AuditLog[]
   priceChanges     PriceHistory[]
   promotionEvents  PromotionEvent[]
@@ -124,7 +124,7 @@ model Shop {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  owner      User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   products   Product[]
   media      ProductMedia[]
   promotions Promotion[]
@@ -199,45 +199,45 @@ enum ProductModeration {
 }
 
 model Product {
-  id              String            @id @default(cuid())
-  reference       String            @unique // référence publique, ex. TM-7KQ2PX
-  slug            String            @unique
-  shopId          String
-  brandId         String
-  categoryId      String?
-  title           String
-  model           String
-  description     String?
-  price           Int // prix habituel en FCFA
-  condition       ProductCondition
-  availability    Availability      @default(AVAILABLE)
-  stock           Int               @default(1)
-  storageGb       Int?
-  ramGb           Int?
-  color           String?
-  warranty        String?
-  accessories     String?
-  defects         String?
-  specs           Json              @default("{}") // caractéristiques techniques facultatives
-  status          PublicationStatus @default(DRAFT)
-  moderation      ProductModeration @default(PENDING)
-  moderationNote  String?
-  moderatedAt     DateTime?
-  publishedAt     DateTime?
-  removedAt       DateTime? // retrait par l'administration
-  removalReason   String?
-  searchText      String            @default("") // texte normalisé pour la recherche
-  ratingAvg       Float             @default(0)
-  ratingCount     Int               @default(0)
-  viewCount       Int               @default(0)
-  whatsappClicks  Int               @default(0)
-  isDemo          Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id             String            @id @default(cuid())
+  reference      String            @unique // référence publique, ex. TM-7KQ2PX
+  slug           String            @unique
+  shopId         String
+  brandId        String
+  categoryId     String?
+  title          String
+  model          String
+  description    String?
+  price          Int // prix habituel en FCFA
+  condition      ProductCondition
+  availability   Availability      @default(AVAILABLE)
+  stock          Int               @default(1)
+  storageGb      Int?
+  ramGb          Int?
+  color          String?
+  warranty       String?
+  accessories    String?
+  defects        String?
+  specs          Json              @default("{}") // caractéristiques techniques facultatives
+  status         PublicationStatus @default(DRAFT)
+  moderation     ProductModeration @default(PENDING)
+  moderationNote String?
+  moderatedAt    DateTime?
+  publishedAt    DateTime?
+  removedAt      DateTime? // retrait par l'administration
+  removalReason  String?
+  searchText     String            @default("") // texte normalisé pour la recherche
+  ratingAvg      Float             @default(0)
+  ratingCount    Int               @default(0)
+  viewCount      Int               @default(0)
+  whatsappClicks Int               @default(0)
+  isDemo         Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
-  shop         Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  brand        Brand             @relation(fields: [brandId], references: [id], onDelete: Restrict)
-  category     Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  shop         Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  brand        Brand              @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   media        ProductMedia[]
   promotions   Promotion[]
   favorites    ProductFavorite[]
@@ -348,6 +348,31 @@ model Job {
 }
 
 /// Fichiers à supprimer du stockage (alimentée par un déclencheur SQL, y compris lors des suppressions en cascade).
+/// Publicité affichée en fond de la section d'accueil (hero), gérée par l'administration.
+model HeroAd {
+  id             String    @id @default(cuid())
+  /// Texte affiché sur la publicité (et alternative textuelle).
+  title          String
+  subtitle       String?
+  /// Annonceur, affiché avec la mention « Publicité ».
+  advertiser     String?
+  /// https://… ou chemin interne (/catalogue…). Facultatif.
+  linkUrl        String?
+  imageKey       String
+  mobileImageKey String
+  width          Int
+  height         Int
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
 model StorageGarbage {
   id        String   @id @default(cuid())
   key       String
@@ -392,19 +417,19 @@ enum PromotionStatus {
 }
 
 model Promotion {
-  id               String          @id @default(cuid())
-  productId        String
-  shopId           String
-  promoPrice       Int
-  referencePrice   Int // prix de référence figé à la création (voir docs/REGLES-METIER.md)
-  startsAt         DateTime
-  endsAt           DateTime
-  status           PromotionStatus @default(ACTIVE)
-  conditions       String?
-  statusReason     String?
-  isDemo           Boolean         @default(false)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  productId      String
+  shopId         String
+  promoPrice     Int
+  referencePrice Int // prix de référence figé à la création (voir docs/REGLES-METIER.md)
+  startsAt       DateTime
+  endsAt         DateTime
+  status         PromotionStatus @default(ACTIVE)
+  conditions     String?
+  statusReason   String?
+  isDemo         Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   product Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   shop    Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)

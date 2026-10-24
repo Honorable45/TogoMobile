@@ -29,7 +29,33 @@ function list(name: string, fallback: string): string[] {
     .filter(Boolean);
 }
 
-export type StorageDriver = 'local' | 's3';
+/**
+ * Cloudinary : CLOUDINARY_URL au format officiel cloudinary://<api_key>:<api_secret>@<cloud_name>
+ * (tableau de bord Cloudinary → « API Keys »), ou les trois variables séparées.
+ */
+function cloudinaryConfig() {
+  const raw = process.env.CLOUDINARY_URL || '';
+  let cloudName = process.env.CLOUDINARY_CLOUD_NAME || '';
+  let apiKey = process.env.CLOUDINARY_API_KEY || '';
+  let apiSecret = process.env.CLOUDINARY_API_SECRET || '';
+  if (raw) {
+    const m = raw.match(/^cloudinary:\/\/([^:]+):([^@]+)@([^/?#]+)$/);
+    if (!m) throw new Error('CLOUDINARY_URL invalide : format attendu cloudinary://<api_key>:<api_secret>@<cloud_name>');
+    [apiKey, apiSecret, cloudName] = [decodeURIComponent(m[1]), decodeURIComponent(m[2]), m[3]];
+  }
+  return {
+    cloudName,
+    apiKey,
+    apiSecret,
+    /** Dossier racine dans le compte (sépare production et préproduction sur un même compte). */
+    folder: (process.env.CLOUDINARY_FOLDER || 'togomobile').replace(/^\/+|\/+$/g, ''),
+    /** Remplaçables uniquement pour les tests (serveur Cloudinary simulé). */
+    apiBase: (process.env.CLOUDINARY_API_BASE || 'https://api.cloudinary.com').replace(/\/$/, ''),
+    deliveryBase: (process.env.CLOUDINARY_DELIVERY_BASE || 'https://res.cloudinary.com').replace(/\/$/, ''),
+  };
+}
+
+export type StorageDriver = 'local' | 's3' | 'cloudinary';
 export type MailDriver = 'console' | 'resend';
 
 function loadEnv() {
@@ -72,6 +98,7 @@ function loadEnv() {
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
       /** URL publique du bucket (ex. domaine R2 personnalisé). */
       publicUrl: (process.env.S3_PUBLIC_URL || '').replace(/\/$/, ''),
+      cloudinary: cloudinaryConfig(),
     },
 
     media: {
@@ -152,8 +179,14 @@ function loadEnv() {
     }
     if (env.storage.driver === 'local') {
       // Les disques des hébergeurs (Render, etc.) ne sont pas persistants.
-      throw new Error('STORAGE_DRIVER=local est interdit en production : configurez un stockage S3/R2');
+      throw new Error('STORAGE_DRIVER=local est interdit en production : configurez Cloudinary ou un stockage S3/R2');
     }
+  }
+  if (!['local', 's3', 'cloudinary'].includes(env.storage.driver)) throw new Error('STORAGE_DRIVER : local, s3 ou cloudinary');
+  if (env.storage.driver === 'cloudinary') {
+    const c = env.storage.cloudinary;
+    if (!c.cloudName || !c.apiKey || !c.apiSecret) throw new Error('CLOUDINARY_URL est obligatoire avec STORAGE_DRIVER=cloudinary');
+    if (!/^[a-z0-9_-]+(\/[a-z0-9_-]+)*$/i.test(c.folder)) throw new Error('CLOUDINARY_FOLDER invalide (lettres, chiffres, - et _, séparés par /)');
   }
   if (env.storage.driver === 's3' && (!env.storage.bucket || !env.storage.publicUrl)) {
     throw new Error('S3_BUCKET et S3_PUBLIC_URL sont obligatoires avec STORAGE_DRIVER=s3');

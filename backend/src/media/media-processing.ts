@@ -176,3 +176,45 @@ export async function transcodeVideo(ffmpeg: string, file: string, out: string) 
   );
   if (code !== 0) throw new Error(`Transcodage impossible : ${stderr.split('\n').filter(Boolean).slice(-1)[0] ?? 'erreur ffmpeg'}`);
 }
+
+// ─── Publicités de l'accueil ────────────────────────────────────────────────
+
+export const HERO_MIN_WIDTH = 1200;
+
+export interface HeroImage {
+  desktop: Buffer;
+  mobile: Buffer;
+  width: number;
+  height: number;
+}
+
+/**
+ * Image de fond plein écran : version 1920 px (ordinateur) et 960 px (mobile), WebP, métadonnées supprimées.
+ * Refuse les images trop petites, qui seraient floues une fois étirées sur toute la largeur.
+ */
+export async function processHeroImage(buf: Buffer): Promise<HeroImage> {
+  if (buf.length > env().media.maxImageBytes) {
+    throw new PayloadTooLargeException(`Image trop volumineuse (maximum ${env().media.maxImageBytes / 1024 / 1024} Mo).`);
+  }
+  const type = sniff(buf);
+  if (!type || type.kind !== 'image') throw new BadRequestException('Format d’image non pris en charge. Formats acceptés : JPEG, PNG, WebP, AVIF.');
+  const meta = await sharp(buf, { limitInputPixels: 50_000_000, failOn: 'error' })
+    .metadata()
+    .catch(() => null);
+  if (!meta) throw new BadRequestException('Image illisible ou corrompue.');
+  // Orientation EXIF 5 à 8 : largeur et hauteur sont inversées après rotation.
+  const width = (meta.orientation ?? 1) >= 5 ? meta.height : meta.width;
+  if (!width || width < HERO_MIN_WIDTH) {
+    throw new BadRequestException(`Image trop petite : ${HERO_MIN_WIDTH} px de large au minimum (1920 × 1080 recommandé).`);
+  }
+  try {
+    const base = sharp(buf, { limitInputPixels: 50_000_000, failOn: 'error' }).rotate();
+    const [desktop, mobile] = await Promise.all([
+      base.clone().resize({ width: 1920, withoutEnlargement: true }).webp({ quality: 78 }).toBuffer({ resolveWithObject: true }),
+      base.clone().resize({ width: 960, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer(),
+    ]);
+    return { desktop: desktop.data, mobile, width: desktop.info.width, height: desktop.info.height };
+  } catch {
+    throw new BadRequestException('Image illisible ou corrompue.');
+  }
+}

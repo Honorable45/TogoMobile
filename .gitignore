@@ -15,3 +15,6 @@ admin/test-results
 *.tsbuildinfo
 next-env.d.ts
 e2e/.admin.json
+
+# Variables de déploiement générées (contiennent des secrets)
+deploy/secrets/

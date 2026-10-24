@@ -11,7 +11,7 @@ Navigateur ──► Cloudflare (DNS, TLS, protection) ──► Vercel : fronte
      │                                                   │                        ▲
      │                                            Render : worker ─────────────────┘ (file de tâches)
      │                                                   │
-     └── envoi direct des fichiers (URL présignée) ──► Cloudflare R2 ──► diffusion des médias (media.<domaine>)
+     └── envoi direct des fichiers (formulaire signé) ──► Cloudinary ──► diffusion des médias (CDN res.cloudinary.com)
 ```
 
 | Composant | Service proposé | Rôle |
@@ -21,7 +21,7 @@ Navigateur ──► Cloudflare (DNS, TLS, protection) ──► Vercel : fronte
 | API | Render, service web (`pnpm --filter backend start:prod`) | règles métier, sécurité ; sans état, mise à l'échelle horizontale |
 | Worker | Render, background worker (`pnpm --filter backend start:worker`) | traitement des médias, invalidation du cache, nettoyage, début et fin des promotions |
 | Base | PostgreSQL 14+ managé (Render, Neon, Supabase…) | données ; file de tâches |
-| Médias | Cloudflare R2 (ou S3 compatible) | photos et vidéos, jamais sur le disque des instances |
+| Médias | Cloudinary (ou Cloudflare R2 / S3) | photos et vidéos, jamais sur le disque des instances |
 | Redis (facultatif) | Render Key Value, Upstash… | compteurs de limitation de débit partagés |
 | E-mails | Resend | réinitialisation du mot de passe |
 
@@ -34,8 +34,8 @@ Le disque des hébergeurs n'est pas persistant : `STORAGE_DRIVER=local` et `MAIL
 | 1 | Premier commit Git, dépôt poussé sur GitHub/GitLab | dépôt |
 | 2 | `pnpm verify` réussi (types, tests de l'API, builds des trois applications) | poste ou CI |
 | 3 | Base PostgreSQL managée avec PITR ; `DATABASE_URL` avec `sslmode=require&connection_limit=…` | §1 |
-| 4 | Bucket R2, jeton, domaine `media.<domaine>`, règle CORS PUT, cycle de vie `uploads/` | §2 |
-| 5 | Secrets générés et rangés dans un coffre : `APP_SECRET`, `REVALIDATE_SECRET`, `METRICS_TOKEN` | §3 |
+| 4 | Compte Cloudinary, `CLOUDINARY_URL` copiée | §2 |
+| 5 | Variables générées (`pnpm env:prepare -- --env production --domain <domaine>`), complétées, vérifiées (`pnpm env:check -- deploy/secrets/production`), rangées dans un coffre | §0 |
 | 6 | Render : API + worker depuis `render.yaml`, variables saisies | §3 |
 | 7 | Vercel : projet `frontend` et projet `admin`, variables saisies avant le build | §4, §4 bis |
 | 8 | DNS Cloudflare : `www`, `admin`, `api`, `media` ; SSL « Full (strict) » | §5 |
@@ -49,6 +49,59 @@ Commande à lancer avant chaque mise en production :
 ```bash
 pnpm verify    # types des 3 applications + 145 tests de l'API (base *_test) + builds
 ```
+
+## 0. Variables d'environnement
+
+Le script `scripts/prepare-env.mjs` produit les trois fichiers d'un environnement : `backend.env` (API et worker Render), `frontend.env` et `admin.env` (projets Vercel).
+
+```bash
+pnpm env:prepare -- --env production --domain <domaine>   # → deploy/secrets/production/{backend,frontend,admin}.env
+pnpm env:prepare -- --env staging --domain <domaine>      # → deploy/secrets/staging/…
+pnpm env:check -- deploy/secrets/production               # contrôle avant déploiement
+```
+
+**Sans domaine** (démarrage) : `pnpm env:prepare -- --env production --no-domain` utilise les adresses gratuites des hébergeurs.
+- Pour obtenir ces adresses, nommez les projets Vercel `togomobile` et `togomobile-admin`, et gardez les noms de service de `render.yaml` (`togomobile-api`) :
+
+| | Adresse |
+|---|---|
+| Site | `https://togomobile.vercel.app` |
+| Admin | `https://togomobile-admin.vercel.app` |
+| API | `https://togomobile-api.onrender.com` |
+| Médias | CDN Cloudinary (`res.cloudinary.com`) |
+
+- Si un nom est déjà pris, l'hébergeur ajoute un suffixe : régénérez alors avec `--force --site-url … --admin-url … --api-url …`. `--force` remplace aussi les secrets ; ne l'utilisez qu'avant la mise en service.
+- Limites tant qu'il n'y a pas de domaine :
+  - Resend n'envoie les e-mails (mot de passe oublié) qu'à l'adresse du titulaire du compte ;
+  - les médias restent sur l'adresse de Cloudinary (`res.cloudinary.com`), ce qui ne pose pas de problème.
+
+  Passez à un domaine avant d'ouvrir le service au public, avec `--domain`.
+
+Ce que fait le script :
+- **secrets générés** aléatoirement (`APP_SECRET` 64 caractères, `REVALIDATE_SECRET`, `METRICS_TOKEN`), différents pour la production et la préproduction, et identiques là où ils doivent l'être (`REVALIDATE_SECRET` dans l'API et le site) ;
+- **adresses déduites du domaine** :
+
+| | Production | Préproduction |
+|---|---|---|
+| Site | `https://www.<domaine>` (`--site-host @` : domaine nu) | `https://staging.<domaine>` |
+| Admin | `https://admin.<domaine>` | `https://admin-staging.<domaine>` |
+| API | `https://api.<domaine>` | `https://api-staging.<domaine>` |
+| Médias | `https://media.<domaine>` | `https://media-staging.<domaine>` |
+
+- **ne remplit pas** ce qui dépend de vos comptes. Ces lignes sont marquées `À RENSEIGNER` : `DATABASE_URL`, `CLOUDINARY_URL` (ou les clés R2 avec `--storage r2`), `RESEND_API_KEY` (et `REDIS_URL` si besoin) ;
+- **n'écrase jamais** des fichiers existants, car `APP_SECRET` ne doit jamais changer (`--force` pour forcer).
+
+Le contrôle (`env:check`) vérifie :
+- que les valeurs obligatoires sont présentes et que les URL sont en HTTPS ;
+- la longueur des secrets, et les valeurs interdites en production (stockage local, e-mails en console, données de démonstration) ;
+- la cohérence entre les trois applications : même API, même cookie, même secret d'invalidation, adresses du site et de l'admin.
+
+Utilisation :
+1. **Render** : groupe de variables `togomobile-shared` → « Add from .env » → coller `backend.env`.
+2. **Vercel** : chaque projet → Settings → Environment Variables → coller `frontend.env` ou `admin.env` (environnement *Production*, ou *Preview* pour la préproduction).
+3. Ranger le dossier dans un coffre (gestionnaire de mots de passe), puis le supprimer du poste.
+
+`deploy/secrets/` est ignoré par Git. Les modèles sans secret sont dans `deploy/examples/`.
 
 ## Environnements
 
@@ -81,48 +134,64 @@ Vercel : utiliser les environnements *Preview* (préproduction) et *Production*,
 - Index sur grosses tables : `CREATE INDEX CONCURRENTLY` en dehors de la migration Prisma (qui s'exécute dans une transaction), puis migration `IF NOT EXISTS`.
 - Avant une migration à risque : sauvegarde manuelle (§8) et essai sur la préproduction.
 
-## 2. Stockage des médias (Cloudflare R2)
+## 2. Stockage des médias (Cloudinary)
 
-1. Créer le bucket et un domaine public personnalisé (`media.<domaine>`).
-2. Créer un jeton R2 « Object Read & Write » limité au bucket.
-3. **CORS du bucket**, indispensable à l'envoi direct depuis le navigateur :
+Les photos, vidéos et logos sont stockés sur **Cloudinary** et diffusés par son CDN (`res.cloudinary.com`), jamais sur le disque des serveurs.
 
-```json
-[
-  {
-    "AllowedOrigins": ["https://www.<domaine>", "https://<domaine>"],
-    "AllowedMethods": ["PUT"],
-    "AllowedHeaders": ["content-type"],
-    "MaxAgeSeconds": 3600
-  }
-]
-```
-
-4. Variables (API et worker) :
+1. Créer un compte sur cloudinary.com (l'offre gratuite suffit pour démarrer).
+2. Settings → **API Keys** → copier la variable d'environnement `CLOUDINARY_URL` (`cloudinary://<api_key>:<api_secret>@<cloud_name>`).
+3. Variables (API et worker) :
 
 ```
-STORAGE_DRIVER=s3
-S3_BUCKET=togomobile-media
-S3_REGION=auto
-S3_ENDPOINT=https://<ID_COMPTE>.r2.cloudflarestorage.com
-S3_ACCESS_KEY_ID=…
-S3_SECRET_ACCESS_KEY=…
-S3_PUBLIC_URL=https://media.<domaine>
+STORAGE_DRIVER=cloudinary
+CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
+CLOUDINARY_FOLDER=togomobile          # togomobile-staging pour la préproduction
 ```
+
+Aucun réglage CORS n'est nécessaire : l'API d'envoi de Cloudinary accepte les formulaires signés depuis n'importe quel site.
+
+### Organisation dans Cloudinary
+
+```
+togomobile/
+├── uploads/<produit>/…          originaux en attente de traitement (supprimés après traitement)
+├── products/<produit>/…         photos (3 tailles WebP), vidéos H.264, miniatures
+└── shops/<boutique>/logo-….webp logos des boutiques
+```
+
+Photos et miniatures sont des ressources *image* ; les vidéos, des ressources *video*.
+
+Les fichiers sont servis **tels quels** : les variantes sont produites par le worker (sharp, ffmpeg), et aucune transformation Cloudinary n'est utilisée. Seuls le stockage et la bande passante consomment des crédits.
 
 ### Fonctionnement des envois
 
 1. Le navigateur demande une autorisation : `POST /seller/products/:id/media/uploads` avec le type et la taille. L'API vérifie le propriétaire et la limite (3 photos, 1 vidéo), puis réserve la place.
-2. L'API répond par une URL présignée PUT valable 15 min ; le type et la taille exacte font partie de la signature.
-3. Le navigateur envoie le fichier directement à R2 : il ne transite pas par l'API.
-4. Le navigateur appelle la finalisation : l'API vérifie la taille réelle et les premiers octets (type réel), puis crée le média en état « en traitement ».
+2. L'API répond par un **formulaire signé**, valable pour un seul identifiant de fichier. Le secret d'API ne quitte jamais le serveur.
+3. Le navigateur envoie le fichier directement à Cloudinary, avec une barre de progression : le fichier ne transite pas par l'API.
+4. Finalisation : l'API vérifie la taille réelle et les premiers octets (type réel). Un fichier plus gros que déclaré, ou d'un autre type, est refusé et supprimé de Cloudinary.
 5. Le worker produit les variantes, puis le média passe « prêt ». En cas d'échec, il passe « échec », avec la raison affichée au vendeur.
 
-Les identifiants R2 ne quittent jamais le serveur. Les objets sont sous des clés aléatoires, et les originaux sont supprimés après traitement.
+**Nettoyage** : les envois non finalisés expirent. Les fichiers des médias supprimés, y compris en cascade (produit, boutique), sont collectés par un déclencheur SQL (`StorageGarbage`), puis supprimés de Cloudinary par le worker.
 
-Le bucket public ne sert que les versions traitées des médias. Les fichiers d'un brouillon sont accessibles à qui connaît leur URL (impossible à deviner), mais ils ne sont listés nulle part.
+**Limites de l'offre gratuite** (à vérifier sur la page tarifs de Cloudinary, elles évoluent) :
+- quota mensuel de crédits partagé entre le stockage et la bande passante ;
+- taille maximale par fichier (de l'ordre de 10 Mo pour une image et 100 Mo pour une vidéo).
 
-**Nettoyage** : les envois non finalisés expirent. Les fichiers des médias supprimés, y compris en cascade (produit, boutique), sont collectés par un déclencheur SQL (`StorageGarbage`) puis supprimés par le worker, sauf s'ils sont encore référencés. En complément, configurez une règle de cycle de vie R2 sur le préfixe `uploads/` (suppression après 2 jours) pour les cas où la base elle-même serait restaurée.
+Les limites de TogoMobile (8 Mo par photo, 40 Mo par vidéo) restent en dessous. Suivez la consommation dans le tableau de bord Cloudinary (Usage).
+
+### Alternative : Cloudflare R2 (ou tout stockage S3)
+
+`pnpm env:prepare -- … --storage r2` génère les variables correspondantes. Étapes :
+1. Créer le bucket, un domaine public (`media.<domaine>`, ou l'adresse `r2.dev` pour démarrer), et un jeton « Object Read & Write » limité au bucket.
+2. Ajouter la **règle CORS** du bucket, indispensable à l'envoi direct :
+
+```json
+[{ "AllowedOrigins": ["https://www.<domaine>"], "AllowedMethods": ["PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+```
+
+3. Variables : `STORAGE_DRIVER=s3`, `S3_BUCKET`, `S3_REGION=auto`, `S3_ENDPOINT=https://<ID_COMPTE>.r2.cloudflarestorage.com`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`.
+
+Avec R2, la taille exacte fait partie de la signature, car l'envoi se fait par une URL PUT présignée. Ajoutez une règle de cycle de vie sur `uploads/` (2 jours).
 
 **ffmpeg** (miniature, durée maximale, transcodage H.264) : le paquet facultatif `ffmpeg-static` télécharge un binaire à l'installation, ou indiquez `FFMPEG_PATH`. Sans ffmpeg, les vidéos sont validées (signature, taille) mais diffusées sans transcodage ni miniature, et sont marquées `transcoded=false`.
 
@@ -190,7 +259,6 @@ SESSION_COOKIE_NAME=tm_session
 www.<domaine>   → Vercel      NEXT_PUBLIC_SITE_URL, WEB_URL, CORS_ORIGINS
 admin.<domaine> → Vercel      NEXT_PUBLIC_ADMIN_URL, ADMIN_URL
 api.<domaine>   → Render      API_URL
-media.<domaine> → R2          S3_PUBLIC_URL
 ```
 
 - Le navigateur n'appelle que le domaine du site. Le cookie de session reste first-party (`SameSite=Lax`, `HttpOnly`, `Secure`).
@@ -215,7 +283,7 @@ Le mot de passe est demandé sans être affiché (12 caractères minimum), ou fo
 1. `GET https://api.<domaine>/api/v1/health` → `status: ok`, `database: ok`, `jobs.failedLastHour: 0`.
 2. Page d'accueil, catalogue, une fiche produit, une boutique.
 3. `https://admin.<domaine>` : connexion administrateur, tableau de bord ; un compte vendeur y est refusé ; `https://www.<domaine>/admin` redirige vers l'administration.
-4. Connexion vendeur, puis ajout d'une photo : elle passe « en traitement » puis « prête » en quelques secondes, ce qui confirme que le worker et R2 fonctionnent.
+4. Connexion vendeur, puis ajout d'une photo : elle passe « en traitement » puis « prête » en quelques secondes, ce qui confirme que le worker et Cloudinary fonctionnent.
 5. Modifier un prix : la fiche publique affiche le nouveau prix immédiatement (invalidation).
 6. `GET /api/v1/metrics` avec `Authorization: Bearer $METRICS_TOKEN` répond.
 7. Journaux Render : aucun `http_error` ni `job_error` en boucle.
@@ -230,8 +298,8 @@ Le mot de passe est demandé sans être affiché (12 caractères minimum), ou fo
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
-| L'API refuse de démarrer : « STORAGE_DRIVER=local est interdit en production » | stockage non configuré | configurer R2 (§2) |
-| Envoi de photo : erreur réseau dans le navigateur | CORS du bucket absent | §2, étape 3 |
+| L'API refuse de démarrer : « STORAGE_DRIVER=local est interdit en production » | stockage non configuré | configurer Cloudinary (§2) |
+| Envoi de photo refusé par le stockage | `CLOUDINARY_URL` erronée (signature refusée) ou quota Cloudinary atteint ; avec R2 : CORS du bucket absent | §2 ; tableau de bord Cloudinary → Usage |
 | Photos bloquées « en traitement » | worker arrêté ou en échec | journaux du worker ; `GET /health` → `jobs` ; `pnpm --filter backend maintenance -- --drain` |
 | Prix pas à jour sur le site | invalidation non configurée ou secret différent | `WEB_REVALIDATE_URL`, `REVALIDATE_SECRET` identiques des deux côtés ; tâches `web.revalidate` en échec dans la table `Job` |
 | 403 « Origine de la requête non autorisée » | domaine absent de `CORS_ORIGINS` | ajouter l'origine exacte |

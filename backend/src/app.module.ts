@@ -2,6 +2,7 @@ import { Injectable, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import type { Request } from 'express';
+import { AdsModule } from './ads/ads.module';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
@@ -60,6 +61,7 @@ class IpThrottlerGuard extends ThrottlerGuard {
     ReferentialsModule,
     StatsModule,
     AdminModule,
+    AdsModule,
   ],
   controllers: [HealthController],
   providers: [

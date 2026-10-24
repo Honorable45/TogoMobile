@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowRight, Search, ShieldCheck, Smartphone, Store, Tag } from 'lucide-react';
 import { RevealWords, revealEnd } from '@/components/layout/reveal';
 import { ProductRow } from '@/components/product/product-card';
+import { HeroBackdrop } from '@/components/home/hero-backdrop';
+import { slidesFromAds, slidesFromPromotions } from '@/components/home/hero-slides';
 import { ShopCard } from '@/components/shop/shop-card';
 import { FacebookIcon, InstagramIcon, TikTokIcon } from '@/components/ui/brand-icons';
 import { ButtonLink, buttonClass } from '@/components/ui/button';
@@ -15,7 +17,9 @@ const MOTTO_STEP = 110;
 
 export default async function HomePage() {
   // Repli si l'API est momentanément injoignable (y compris pendant le build).
-  const data = await apiGet<HomeData>('/home', { tags: [cacheTags.home, cacheTags.catalog] }).catch((): HomeData => ({ brands: [], newest: [], popular: [], promotions: [], shops: [] }));
+  const data = await apiGet<HomeData>('/home', { tags: [cacheTags.home, cacheTags.catalog] }).catch((): HomeData => ({ heroAds: [], brands: [], newest: [], popular: [], promotions: [], shops: [] }));
+  // Fond de l'accueil : publicités de l'administration, sinon promotions en cours des boutiques.
+  const slides = data.heroAds?.length ? slidesFromAds(data.heroAds) : slidesFromPromotions(data.promotions);
   const nameEnd = revealEnd(brand.name, 150, NAME_STEP);
   const mottoStart = nameEnd - 350;
   const buttonsDelay = revealEnd(brand.motto, mottoStart, MOTTO_STEP);
@@ -28,14 +32,16 @@ export default async function HomePage() {
   return (
     <>
       <section className="relative isolate flex min-h-[100svh] items-center justify-center overflow-hidden bg-navy text-white">
-        {brand.heroImage && (
+        {slides.length > 0 ? (
+          <HeroBackdrop slides={slides} />
+        ) : brand.heroImage ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={brand.heroImage} alt="" className="absolute inset-0 -z-20 size-full object-cover" fetchPriority="high" />
             <div className="absolute inset-0 -z-10 bg-navy/55" aria-hidden />
           </>
-        )}
-        <div className="container-page flex flex-col items-center pb-16 pt-40 text-center md:pt-32">
+        ) : null}
+        <div className={`container-page flex flex-col items-center pt-40 text-center md:pt-32 ${slides.length ? 'pb-48 sm:pb-44' : 'pb-16'}`}>
           <h1 className="display text-[64px] md:text-[104px] lg:text-[128px]">
             <RevealWords text={brand.name} start={150} step={NAME_STEP} />
           </h1>

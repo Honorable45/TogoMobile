@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { BarChart3, Flag, Layers, Receipt, ScrollText, Smartphone, Star, Store, Tag, Users } from 'lucide-react';
+import { BarChart3, Flag, Layers, Megaphone, Receipt, ScrollText, Smartphone, Star, Store, Tag, Users } from 'lucide-react';
 import { useRequireUser } from '@/lib/hooks';
 import { Button } from '../ui/button';
 import { Field, Textarea } from '../ui/field';
@@ -14,6 +14,7 @@ const NAV = [
   { href: '/boutiques', label: 'Boutiques', icon: Store },
   { href: '/produits', label: 'Annonces', icon: Smartphone },
   { href: '/promotions', label: 'Promotions', icon: Tag },
+  { href: '/publicites', label: 'Publicités', icon: Megaphone },
   { href: '/avis', label: 'Avis', icon: Star },
   { href: '/ventes', label: 'Ventes déclarées', icon: Receipt },
   { href: '/signalements', label: 'Signalements', icon: Flag },

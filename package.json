@@ -18,6 +18,8 @@
     "db:seed:clear": "pnpm --filter backend seed:clear",
     "admin:create": "pnpm --filter backend admin:create",
     "typecheck": "pnpm --filter backend exec tsc --noEmit -p tsconfig.json && pnpm --filter frontend typecheck && pnpm --filter admin typecheck",
-    "verify": "pnpm typecheck && pnpm --filter backend test && pnpm build"
+    "verify": "pnpm typecheck && pnpm --filter backend test && pnpm build",
+    "env:prepare": "node scripts/prepare-env.mjs",
+    "env:check": "node scripts/prepare-env.mjs --check"
   }
 }

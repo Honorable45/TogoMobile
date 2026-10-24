@@ -132,6 +132,17 @@ Les boutiques, produits, ventes et avis de démonstration portent tous `isDemo =
 - Les mots de passe sont aléatoires et affichés une seule fois.
 - Ces données sont refusées en production, sauf `ALLOW_DEMO_SEED=true`, et se suppriment avec `pnpm --filter backend seed:clear`.
 
+## Publicités de l'accueil
+
+- Gérées uniquement par l'administration (application `admin/` → Publicités). Chaque création, modification ou suppression est consignée dans le journal d'audit.
+- Une publicité est **en ligne** si elle est active, commencée (ou sans date de début) et non terminée (ou sans date de fin). Au plus 6 publicités en ligne se succèdent en fond de l'accueil, dans l'ordre choisi.
+- Elles portent toujours la mention **« Publicité »**, suivie de l'annonceur s'il est indiqué. Un lien externe s'ouvre dans un nouvel onglet et est marqué `sponsored`.
+- Lien : adresse `https://` ou chemin du site uniquement. `javascript:`, `data:`, `http:` et `//hôte` sont refusés.
+- Image : 1200 px de large au minimum (1920 × 1080 recommandé), 8 Mo au maximum. Elle est convertie en deux versions WebP (1920 px et 960 px pour mobile), sans métadonnées.
+- Sans publicité en ligne, l'accueil fait défiler les promotions en cours des boutiques, avec la mention « Promotion ».
+- Défilement : fondu toutes les 5 s, bouton pause, arrêt au survol ou au focus. Aucun défilement automatique si l'appareil demande de réduire les animations.
+- Le cache de l'accueil est invalidé à chaque changement, ainsi qu'au début et à la fin programmés d'une publicité (vérification chaque minute).
+
 ## Comptes
 
 - Après 8 échecs de connexion consécutifs (`LOGIN_MAX_FAILURES`), le compte est verrouillé 15 min (`LOGIN_LOCK_MINUTES`), en plus de la limitation par adresse IP. Le message reste générique ; une réinitialisation de mot de passe lève le verrou.

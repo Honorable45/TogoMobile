@@ -7,7 +7,7 @@ Navigateur ──► Site Next.js (Vercel) ──► /api/v1/* relayé ──►
     │               │  pages publiques en cache par étiquette ◄── invalidation ──┘   ▲  (données + file de tâches)
     │               │                                                                 │
     │               └── médias servis par le CDN du stockage           Worker (Render) ┘ variantes, vidéo, nettoyage
-    └── envoi direct des fichiers (URL présignée PUT) ──► Stockage objet (R2/S3) ◄── Worker
+    └── envoi direct des fichiers (formulaire signé) ──► Cloudinary (ou R2/S3) ◄── Worker
 ```
 
 - **Relais `/api/v1`** : le navigateur n'appelle jamais l'API sur un autre domaine. `next.config.ts` réécrit `/api/v1/*` vers `API_URL`. Le cookie de session est donc posé sur le domaine du site (cookie « first-party », `SameSite=Lax`), même si l'API est hébergée ailleurs.
@@ -32,7 +32,7 @@ Navigateur ──► Site Next.js (Vercel) ──► /api/v1/* relayé ──►
 | `referentials` | Marques et catégories |
 | `stats` | Tableau de bord vendeur, statistiques administrateur, données du sitemap |
 | `admin` | Validation, suspension, modération, décisions, journal d'audit |
-| `storage` | Abstraction du stockage (local en développement, S3/R2 en production), URL présignées |
+| `storage` | Abstraction du stockage : local (développement), Cloudinary ou S3/R2 (production), autorisations d'envoi direct |
 | `jobs` | File de tâches PostgreSQL, tentatives, tâches périodiques ; exécutée par le worker (`dist/worker.js`) |
 | `cache` | Invalidation ciblée du cache du site (`RevalidationService`) |
 | `observability` | Métriques Prometheus, temps de réponse, en-têtes `Cache-Control`, erreurs du site, santé |
@@ -116,7 +116,7 @@ Les montants sont des entiers en FCFA. Les dates sont stockées en UTC (`timesta
 
 ## Médias
 
-1. `POST /seller/products/:id/media/uploads` : propriété, type déclaré, taille, puis réservation d'une place sous verrou de la ligne produit (médias non échoués + envois en cours non expirés ≤ 3 photos / 1 vidéo). La réponse contient une URL PUT présignée (S3/R2 : type et taille signés ; local : jeton à usage unique vers `PUT /api/v1/uploads/:token`).
+1. `POST /seller/products/:id/media/uploads` : propriété, type déclaré, taille, puis réservation d'une place sous verrou de la ligne produit (médias non échoués + envois en cours non expirés ≤ 3 photos / 1 vidéo). La réponse contient l'autorisation d'envoi direct : formulaire POST signé pour un seul identifiant (Cloudinary), URL PUT présignée avec type et taille signés (S3/R2), ou jeton à usage unique vers `PUT /api/v1/uploads/:token` (local).
 2. Le navigateur envoie le fichier directement au stockage, avec suivi de la progression.
 3. `POST …/uploads/:uploadId/complete` : taille réelle (HEAD), lecture des 64 premiers octets (type réel), puis création du média `PROCESSING` et d'une tâche `media.process`. Un fichier non conforme est refusé et supprimé.
 4. Worker :
@@ -138,7 +138,7 @@ L'ancien envoi multipart (`POST …/media`) est conservé pour compatibilité ; 
 | API (mémoire) | nombre total de résultats d'une recherche du catalogue (30 s) | expiration |
 | Jamais | réponses authentifiées, espaces vendeur et admin, `Set-Cookie` | `private, no-store` |
 
-Événements invalidants : modification, publication, retrait, stock d'un produit ; statut, nom, logo d'une boutique (toutes ses fiches) ; création, modification, arrêt d'une promotion et son début ou sa fin (vérification chaque minute) ; publication ou masquage d'un avis.
+Événements invalidants : modification, publication, retrait, stock d'un produit ; statut, nom, logo d'une boutique (toutes ses fiches) ; création, modification, arrêt d'une promotion et son début ou sa fin (vérification chaque minute) ; publication ou masquage d'un avis ; création, modification, suppression d'une publicité de l'accueil, et son début ou sa fin programmés.
 
 ## Observabilité
 

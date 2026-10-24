@@ -183,7 +183,21 @@ export interface Me {
   shop: { id: string; name: string; slug: string; status: ShopStatus } | null;
 }
 
+/** Publicité affichée en fond de l'accueil (gérée par l'administration). */
+export interface HeroAd {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  advertiser: string | null;
+  linkUrl: string | null;
+  imageUrl: string;
+  mobileImageUrl: string;
+  width: number;
+  height: number;
+}
+
 export interface HomeData {
+  heroAds: HeroAd[];
   brands: Brand[];
   newest: ProductCard[];
   popular: ProductCard[];

@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { crc32, deflateSync } from 'node:zlib';
 
 /**
  * Parcours complet (cahier des charges, phase 6) :
@@ -20,6 +21,26 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR
 
 /** Application d'administration (dossier admin/), servie séparément. */
 const ADMIN = (process.env.E2E_ADMIN_URL || 'http://localhost:3001').replace(/\/$/, '');
+
+/** PNG uni (RGB) de la taille voulue, sans dépendance : assez grand pour une image de fond d'accueil. */
+function solidPng(width: number, height: number, [r, g, b]: [number, number, number]) {
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(td));
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr.set([8, 2, 0, 0, 0], 8); // 8 bits, RVB, sans entrelacement
+  const row = Buffer.alloc(1 + width * 3);
+  for (let x = 0; x < width; x++) row.set([r, g, b], 1 + x * 3);
+  const raw = Buffer.concat(Array.from({ length: height }, () => row));
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
 
 let seller: Page;
 let admin: Page;
@@ -215,6 +236,33 @@ test('15. l’administration contrôle et masque l’avis ; il disparaît de la 
   await expect(reviews.getByText('Ama P.')).toHaveCount(0);
   await admin.goto(`${ADMIN}/journal`);
   await expect(admin.getByText('review.hide').first()).toBeVisible();
+});
+
+test('16. l’administration publie une publicité ; elle s’affiche en fond de l’accueil avec la mention « Publicité »', async ({ page }) => {
+  const title = `Offre Parcours ${run}`;
+  await admin.goto(`${ADMIN}/publicites`);
+  await admin.getByLabel('Image de la publicité').setInputFiles({ name: 'pub.png', mimeType: 'image/png', buffer: solidPng(1600, 900, [27, 58, 107]) });
+  await expect(admin.getByAltText('Aperçu de l’image')).toBeVisible();
+  const form = admin.locator('form', { has: admin.getByRole('heading', { name: 'Nouvelle publicité' }) });
+  await form.getByLabel('Titre', { exact: true }).fill(title);
+  await form.getByLabel(/Annonceur/).fill('Annonceur E2E');
+  await form.getByLabel(/Lien/).fill('/promotions');
+  await form.getByRole('button', { name: 'Publier la publicité' }).click();
+  await expect(admin.getByText('Publicité créée')).toBeVisible();
+  const row = admin.getByRole('listitem').filter({ hasText: title });
+  await expect(row.getByText('En ligne')).toBeVisible();
+
+  await page.goto('/');
+  await expect(page.getByText('Publicité · Annonceur E2E')).toBeVisible();
+  await expect(page.getByText(title)).toBeVisible();
+  await page.getByRole('link', { name: /Découvrir/ }).click();
+  await expect(page).toHaveURL(/\/promotions$/);
+
+  // Désactivée, elle disparaît de l'accueil.
+  await row.getByRole('button', { name: 'Désactiver' }).click();
+  await expect(admin.getByText('Publicité désactivée')).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByText(title)).toHaveCount(0);
 });
 
 test('les vendeurs n’ont pas accès à l’administration', async () => {

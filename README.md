@@ -51,6 +51,7 @@ docker run -d --name togomobile-pg -e POSTGRES_USER=togomobile -e POSTGRES_PASSW
 | Commande | Effet |
 |---|---|
 | `pnpm dev` | API, site et administration en mode développement |
+| `pnpm env:prepare -- --env production --domain <domaine>` / `pnpm env:check -- deploy/secrets/production` | Génère / vérifie les variables de déploiement des trois applications |
 | `pnpm verify` | Avant un déploiement : types, tests de l'API, builds des trois applications |
 | `pnpm build` | Build de production des trois applications |
 | `pnpm --filter backend deploy:migrate` | Applique les migrations (une fois par déploiement, jamais au démarrage) |
@@ -70,7 +71,7 @@ docker run -d --name togomobile-pg -e POSTGRES_USER=togomobile -e POSTGRES_PASSW
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — organisation, modèle de données, sécurité, API
 - [docs/REGLES-METIER.md](docs/REGLES-METIER.md) — promotions, prix de référence, ventes, avis vérifiés et leurs limites
-- [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) — environnements, Vercel, Render (API + worker), PostgreSQL, R2/S3, CDN, retour arrière, dépannage
+- [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) — environnements, Vercel, Render (API + worker), PostgreSQL, Cloudinary (ou R2/S3), CDN, retour arrière, dépannage
 - [docs/EXPLOITATION.md](docs/EXPLOITATION.md) — sauvegardes, RPO/RTO, restauration, surveillance, alertes, coûts
 - [docs/AUDIT.md](docs/AUDIT.md) et [docs/RAPPORT-OPTIMISATION.md](docs/RAPPORT-OPTIMISATION.md) — audit et mise à niveau pour la montée en charge
 - [docs/TESTS.md](docs/TESTS.md) — stratégie et exécution des tests

@@ -332,7 +332,9 @@ async function clearE2e() {
   const shops = await prisma.shop.findMany({ where: { ownerId: { in: userIds } }, select: { id: true } });
   const shopIds = shops.map((s) => s.id);
   const media = await prisma.productMedia.findMany({ where: { shopId: { in: shopIds } } });
+  const ads = await prisma.heroAd.findMany({ where: { createdById: { in: userIds } }, select: { id: true, imageKey: true, mobileImageKey: true } });
   await prisma.$transaction([
+    prisma.heroAd.deleteMany({ where: { id: { in: ads.map((a) => a.id) } } }),
     prisma.review.deleteMany({ where: { OR: [{ shopId: { in: shopIds } }, { authorId: { in: userIds } }] } }),
     prisma.sale.deleteMany({ where: { OR: [{ shopId: { in: shopIds } }, { declaredById: { in: userIds } }, { buyerId: { in: userIds } }] } }),
     prisma.product.deleteMany({ where: { shopId: { in: shopIds } } }),
@@ -340,13 +342,16 @@ async function clearE2e() {
     prisma.report.deleteMany({ where: { authorId: { in: userIds } } }),
     prisma.user.deleteMany({ where: { id: { in: userIds } } }),
   ]);
-  await Promise.all(media.flatMap((m) => [storage.delete(m.key), m.thumbKey ? storage.delete(m.thumbKey) : null]));
+  await Promise.all([
+    ...media.flatMap((m) => [storage.delete(m.key), m.thumbKey ? storage.delete(m.thumbKey) : null]),
+    ...ads.flatMap((a) => [storage.delete(a.imageKey), storage.delete(a.mobileImageKey)]),
+  ]);
   // Les notes des boutiques de démonstration sont recalculées (des avis de test ont pu y être déposés).
   for (const s of await prisma.shop.findMany({ select: { id: true } })) {
     const agg = await prisma.review.aggregate({ where: { shopId: s.id, status: 'PUBLISHED', verification: 'VERIFIED_PURCHASE' }, _avg: { rating: true }, _count: true });
     await prisma.shop.update({ where: { id: s.id }, data: { ratingAvg: Math.round((agg._avg.rating ?? 0) * 100) / 100, ratingCount: agg._count } });
   }
-  console.log(`Données de test supprimées : ${userIds.length} comptes, ${shopIds.length} boutiques, ${media.length} médias.`);
+  console.log(`Données de test supprimées : ${userIds.length} comptes, ${shopIds.length} boutiques, ${media.length} médias, ${ads.length} publicités.`);
 }
 
 async function main() {

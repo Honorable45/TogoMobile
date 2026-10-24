@@ -18,18 +18,13 @@ envVarGroups:
         sync: false
       - key: API_URL
         sync: false
+      # Médias sur Cloudinary (pour Cloudflare R2 : STORAGE_DRIVER=s3 et variables S3_*, voir docs/DEPLOIEMENT.md §2).
       - key: STORAGE_DRIVER
-        value: s3
-      - key: S3_BUCKET
+        value: cloudinary
+      - key: CLOUDINARY_URL # cloudinary://<api_key>:<api_secret>@<cloud_name>
         sync: false
-      - key: S3_ENDPOINT
-        sync: false
-      - key: S3_ACCESS_KEY_ID
-        sync: false
-      - key: S3_SECRET_ACCESS_KEY
-        sync: false
-      - key: S3_PUBLIC_URL
-        sync: false
+      - key: CLOUDINARY_FOLDER # togomobile (production) / togomobile-staging
+        value: togomobile
       - key: WEB_REVALIDATE_URL # https://www.<domaine>/api/revalidate
         sync: false
       - key: REVALIDATE_SECRET # identique à celui du site (Vercel)

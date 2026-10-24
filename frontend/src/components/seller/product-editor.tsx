@@ -112,18 +112,34 @@ async function shrinkImage(file: File): Promise<Blob> {
 }
 
 /** Envoi PUT direct vers l'URL autorisée (stockage objet ou relais local), avec progression. */
-function putWithProgress(url: string, blob: Blob, headers: Record<string, string>, onProgress: (pct: number) => void): Promise<void> {
+interface UploadTarget {
+  url: string;
+  method: 'PUT' | 'POST';
+  headers: Record<string, string>;
+  /** POST (Cloudinary) : champs signés du formulaire, envoyés avant le fichier. */
+  fields?: Record<string, string>;
+}
+
+/** Envoi direct au stockage : corps brut (PUT, S3/R2/local) ou formulaire signé (POST, Cloudinary). */
+function sendWithProgress(target: UploadTarget, blob: Blob, fileName: string, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    xhr.open(target.method, target.url);
+    for (const [k, v] of Object.entries(target.headers)) xhr.setRequestHeader(k, v);
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
     xhr.onload = () =>
       xhr.status >= 200 && xhr.status < 300
         ? resolve()
         : reject(new ClientApiError(xhr.status, xhr.status === 413 ? 'Fichier trop volumineux.' : 'Le stockage a refusé le fichier. Réessayez.'));
     xhr.onerror = () => reject(new ClientApiError(0, 'Connexion interrompue pendant l’envoi. Réessayez.'));
-    xhr.send(blob);
+    if (target.method === 'POST') {
+      const form = new FormData();
+      for (const [k, v] of Object.entries(target.fields ?? {})) form.append(k, v);
+      form.append('file', blob, fileName);
+      xhr.send(form);
+    } else {
+      xhr.send(blob);
+    }
   });
 }
 
@@ -137,10 +153,10 @@ async function uploadMedia(productId: string, file: File, onProgress: (pct: numb
   const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(file.name);
   const blob = isVideo ? file : await shrinkImage(file);
   const contentType = blob.type || MIME_BY_EXT[file.name.split('.').pop()?.toLowerCase() ?? ''] || 'application/octet-stream';
-  const auth = await api<{ uploadId: string; url: string; headers: Record<string, string> }>(`/seller/products/${productId}/media/uploads`, {
+  const auth = await api<UploadTarget & { uploadId: string }>(`/seller/products/${productId}/media/uploads`, {
     body: { type: isVideo ? 'VIDEO' : 'IMAGE', contentType, size: blob.size },
   });
-  await putWithProgress(auth.url, blob, auth.headers, onProgress);
+  await sendWithProgress(auth, blob, file.name, onProgress);
   return api<SellerProduct>(`/seller/products/${productId}/media/uploads/${auth.uploadId}/complete`, { method: 'POST' });
 }
 

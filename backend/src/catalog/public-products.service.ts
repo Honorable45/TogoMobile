@@ -1,3 +1,4 @@
+import { AdsService } from '../ads/ads.service';
 import { GoneException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { env } from '../config/env';
@@ -15,6 +16,7 @@ export class PublicProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly presenter: ProductPresenter,
+    private readonly ads: AdsService,
   ) {}
 
   async detail(slug: string) {
@@ -155,7 +157,7 @@ export class PublicProductsService {
 
   async home() {
     const now = new Date();
-    const [brands, newest, popular, promoRows, shops] = await Promise.all([
+    const [brands, newest, popular, promoRows, shops, heroAds] = await Promise.all([
       this.prisma.brand.findMany({
         where: { isActive: true, featured: true },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
@@ -195,9 +197,11 @@ export class PublicProductsService {
           _count: { select: { products: { where: { ...listedProductWhere(), availability: 'AVAILABLE' } } } },
         },
       }),
+      this.ads.publicList(now),
     ]);
 
     return {
+      heroAds,
       brands,
       newest: await this.presenter.cards(newest),
       popular: await this.presenter.cards(popular),
