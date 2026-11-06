@@ -36,7 +36,7 @@ export interface PromotionInput {
 export function validatePromotion(
   input: PromotionInput,
   reference: number,
-  opts: { now?: Date; maxDays: number },
+  opts: { now?: Date; maxHours: number },
 ): string[] {
   const now = opts.now ?? new Date();
   const errors: string[] = [];
@@ -57,8 +57,8 @@ export function validatePromotion(
   if (input.startsAt.getTime() < now.getTime() - 5 * 60_000) {
     errors.push('La date de début ne peut pas être dans le passé.');
   }
-  if (input.endsAt.getTime() - input.startsAt.getTime() > opts.maxDays * 24 * 3600_000) {
-    errors.push(`Une promotion ne peut pas durer plus de ${opts.maxDays} jours.`);
+  if (input.endsAt.getTime() - input.startsAt.getTime() > opts.maxHours * 3600_000) {
+    errors.push(`Une promotion ne peut pas durer plus de ${opts.maxHours} heures.`);
   }
   return errors;
 }

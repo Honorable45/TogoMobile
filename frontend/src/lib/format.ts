@@ -53,6 +53,20 @@ export const CONDITION_LABELS: Record<Condition, string> = {
   USED_FAIR: 'Occasion — état correct',
 };
 
+/** Types affichés aux acheteurs : regroupent les états détaillés saisis par les vendeurs. */
+export const PRODUCT_TYPES = [
+  { slug: 'neuf', label: 'Neuf', conditions: ['NEW'] },
+  { slug: 'venu', label: 'Venu', hint: 'Importé, quasi neuf ou reconditionné', conditions: ['LIKE_NEW', 'REFURBISHED'] },
+  { slug: 'occasion', label: 'Occasion', conditions: ['USED_GOOD', 'USED_FAIR'] },
+] as const satisfies ReadonlyArray<{ slug: string; label: string; hint?: string; conditions: readonly Condition[] }>;
+
+/** Rayons principaux du site (catégories racines, voir la migration main_categories). */
+export const MAIN_CATEGORIES = [
+  { slug: 'telephones', label: 'Téléphones' },
+  { slug: 'ordinateurs', label: 'Ordinateurs' },
+  { slug: 'smart-tv', label: 'Smart TV' },
+] as const;
+
 export const AVAILABILITY_LABELS: Record<Availability, string> = {
   AVAILABLE: 'Disponible',
   OUT_OF_STOCK: 'En rupture de stock',

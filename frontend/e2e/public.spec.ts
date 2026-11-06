@@ -8,7 +8,9 @@ test('la page d’accueil présente recherche, marques, promotions et boutiques'
   await expect(page.getByText('Comparer, choisir et commander en confiance')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Catalogue' }).last()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Quel téléphone cherchez-vous ?' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Promotions en cours' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Promo du jour' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tous les produits' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Téléphones/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Récemment validées' })).toBeVisible();
 });
 

@@ -8,8 +8,8 @@ import type { Page, ProductCard } from '@/lib/types';
 
 
 export const metadata: Metadata = {
-  title: 'Promotions sur les téléphones',
-  description: 'Les promotions en cours dans les boutiques de téléphones du Togo, avec la date de fin de chaque offre.',
+  title: 'Promo du jour',
+  description: 'Les promotions du jour des boutiques du Togo : chaque offre dure 24 heures au maximum.',
   alternates: { canonical: '/promotions' },
 };
 
@@ -19,9 +19,9 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
   return (
     <>
     <PageBanner
-      eyebrow="Offres limitées"
-      title="Promotions"
-      subtitle="Les offres qui se terminent bientôt en premier. Prix barré : plus bas prix des 30 derniers jours."
+      eyebrow="24 h seulement"
+      title="Promo du jour"
+      subtitle="Chaque offre dure 24 heures au maximum ; celles qui se terminent bientôt apparaissent en premier. Prix barré : plus bas prix des 30 derniers jours."
       aside={<p className="glass num rounded-full px-4 py-2 text-sm">{data.total} en cours</p>}
     />
     <div className="container-page py-10 md:py-14">
@@ -31,8 +31,8 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
           <Pagination page={data.page} totalPages={data.totalPages} hrefFor={(p) => (p > 1 ? `/promotions?page=${p}` : '/promotions')} />
         </>
       ) : (
-        <EmptyState icon={<Tag className="size-10" />} title="Aucune promotion en cours">
-          Revenez bientôt : les boutiques publient régulièrement de nouvelles offres.
+        <EmptyState icon={<Tag className="size-10" />} title="Aucune promo du jour pour le moment">
+          Revenez bientôt : les boutiques publient de nouvelles offres chaque jour.
         </EmptyState>
       )}
     </div>

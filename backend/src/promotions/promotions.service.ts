@@ -83,7 +83,7 @@ export class PromotionsService {
         throw new BadRequestException('Impossible de créer une promotion sur un produit indisponible ou retiré de la vente.');
       }
       const reference = await this.referencePriceFor(tx, product.id, product.price);
-      const errors = validatePromotion({ promoPrice: dto.promoPrice, startsAt, endsAt }, reference, { maxDays: env().rules.maxPromotionDays });
+      const errors = validatePromotion({ promoPrice: dto.promoPrice, startsAt, endsAt }, reference, { maxHours: env().rules.maxPromotionHours });
       if (errors.length) throw new BadRequestException({ message: errors[0], errors });
       await this.assertNoOverlap(tx, product.id, startsAt, endsAt);
 
@@ -131,7 +131,7 @@ export class PromotionsService {
       await tx.$executeRaw`SELECT id FROM "Product" WHERE id = ${promo.productId} FOR UPDATE`;
       const product = await tx.product.findUniqueOrThrow({ where: { id: promo.productId } });
       const reference = await this.referencePriceFor(tx, product.id, product.price);
-      const errors = validatePromotion({ promoPrice, startsAt, endsAt }, reference, { maxDays: env().rules.maxPromotionDays });
+      const errors = validatePromotion({ promoPrice, startsAt, endsAt }, reference, { maxHours: env().rules.maxPromotionHours });
       if (errors.length) throw new BadRequestException({ message: errors[0], errors });
       await this.assertNoOverlap(tx, product.id, startsAt, endsAt, promo.id);
       const u = await tx.promotion.update({

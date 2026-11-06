@@ -243,7 +243,7 @@ export default async function ProductPage({ params }: Props) {
       </div>
 
       {p.availability !== 'WITHDRAWN' && (
-        <div className="glass-light fixed inset-x-2 bottom-2 z-30 flex items-center gap-3 rounded-[28px] py-2 pl-4 pr-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:hidden">
+        <div className="glass-light fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 rounded-[28px] py-2 pl-4 pr-2 sm:hidden">
           <div className="min-w-0">
             <p className="num text-base font-semibold leading-tight text-brand-600">{fcfa(p.currentPrice)}</p>
             {p.promotion && <p className="text-xs text-muted line-through">{fcfa(p.promotion.referencePrice)}</p>}

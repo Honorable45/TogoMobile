@@ -58,7 +58,7 @@ function PromotionForm({ products, editing, onDone }: { products: SellerProduct[
   const [productId, setProductId] = useState(editing?.productId ?? '');
   const [promoPrice, setPromoPrice] = useState(editing ? String(editing.promoPrice) : '');
   const [startsAt, setStartsAt] = useState(editing ? toLomeInput(new Date(editing.startsAt)) : toLomeInput(now));
-  const [endsAt, setEndsAt] = useState(editing ? toLomeInput(new Date(editing.endsAt)) : toLomeInput(new Date(now.getTime() + 7 * 86_400_000)));
+  const [endsAt, setEndsAt] = useState(editing ? toLomeInput(new Date(editing.endsAt)) : toLomeInput(new Date(now.getTime() + 24 * 3_600_000)));
   const [conditions, setConditions] = useState(editing?.conditions ?? '');
   const [state, setState] = useState<{ loading?: boolean; error?: string; errors?: Record<string, string> }>({});
   const product = products.find((p) => p.id === productId);
@@ -113,7 +113,7 @@ function PromotionForm({ products, editing, onDone }: { products: SellerProduct[
       <Field label="Début (heure de Lomé)" error={state.errors?.startsAt}>
         {(p) => <Input {...p} type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />}
       </Field>
-      <Field label="Fin (heure de Lomé)" error={state.errors?.endsAt} hint="90 jours maximum.">
+      <Field label="Fin (heure de Lomé)" error={state.errors?.endsAt} hint="Promo du jour : 24 heures maximum après le début.">
         {(p) => <Input {...p} type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required />}
       </Field>
       <Field label="Conditions" optional className="sm:col-span-2" error={state.errors?.conditions}>

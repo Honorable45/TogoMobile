@@ -163,8 +163,8 @@ function loadEnv() {
       reviewTokenDays: int('RULE_REVIEW_TOKEN_DAYS', 60),
       /** Fenêtre (jours) pour le calcul du prix de référence des promotions. */
       referencePriceDays: int('RULE_REFERENCE_PRICE_DAYS', 30),
-      /** Durée maximale d'une promotion, en jours. */
-      maxPromotionDays: int('RULE_MAX_PROMOTION_DAYS', 90),
+      /** Durée maximale d'une promotion, en heures (« Promo du jour » : 24 h). */
+      maxPromotionHours: int('RULE_MAX_PROMOTION_HOURS', 24),
     },
   };
 

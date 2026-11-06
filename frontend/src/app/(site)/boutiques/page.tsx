@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Store } from 'lucide-react';
 import { PageBanner } from '@/components/layout/page-banner';
-import { ShopCard } from '@/components/shop/shop-card';
-import { EmptyState, Pagination } from '@/components/ui/misc';
+import { EmptyState } from '@/components/ui/misc';
+import { InfiniteShopGrid } from '@/components/ui/infinite-list';
 import { apiGet, cacheTags, toQuery } from '@/lib/api-server';
 import type { Page, ShopCard as Shop } from '@/lib/types';
 
@@ -18,7 +18,8 @@ export default async function ShopsPage({ searchParams }: { searchParams: SP }) 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const sort = ['rating', 'name'].includes(sp.sort ?? '') ? sp.sort : 'recent';
-  const data = await apiGet<Page<Shop>>(`/shops${toQuery({ q: sp.q, sort, page, pageSize: 24 })}`, { tags: [cacheTags.catalog] });
+  const path = `/shops${toQuery({ q: sp.q, sort, pageSize: 24 })}`;
+  const data = await apiGet<Page<Shop>>(`${path}&page=${page}`, { tags: [cacheTags.catalog] });
   const href = (p: number) => `/boutiques${toQuery({ q: sp.q, sort: sort === 'recent' ? undefined : sort, page: p > 1 ? p : undefined })}`;
 
   return (
@@ -39,12 +40,7 @@ export default async function ShopsPage({ searchParams }: { searchParams: SP }) 
     <div className="container-page py-10 md:py-14">
       {data.items.length ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.items.map((s) => (
-              <ShopCard key={s.id} shop={s} />
-            ))}
-          </div>
-          <Pagination page={data.page} totalPages={data.totalPages} hrefFor={href} />
+          <InfiniteShopGrid key={path} first={data} path={path} nextHref={href(data.page + 1)} />
         </>
       ) : (
         <EmptyState icon={<Store className="size-10" />} title="Aucune boutique trouvée" />

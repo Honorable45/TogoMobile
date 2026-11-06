@@ -83,6 +83,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  /* Mobile : place réservée sous le contenu pour la barre d'onglets fixée en bas de l'écran. */
+  @media (width < 48rem) {
+    body:has(#bottom-nav) {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+  }
   :focus-visible {
     outline: 2px solid var(--color-brand-600);
     outline-offset: 2px;

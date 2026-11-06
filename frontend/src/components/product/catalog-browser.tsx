@@ -2,10 +2,10 @@ import { SearchX } from 'lucide-react';
 import { apiGet, cacheTags, toQuery } from '@/lib/api-server';
 import { plural } from '@/lib/format';
 import type { Brand, Page, ProductCard } from '@/lib/types';
-import { EmptyState, Pagination } from '../ui/misc';
+import { EmptyState } from '../ui/misc';
+import { InfiniteProductGrid } from '../ui/infinite-list';
 import { ButtonLink } from '../ui/button';
 import { CatalogFilters, SortSelect, type FilterValues } from './catalog-filters';
-import { ProductGrid } from './product-card';
 
 export type RawParams = Record<string, string | string[] | undefined>;
 
@@ -32,9 +32,7 @@ export function parseFilters(sp: RawParams): FilterValues & { page: number } {
 /** Catalogue filtrable et paginé, partagé par le catalogue général et les pages boutique. */
 export async function CatalogBrowser({ searchParams, basePath, shop }: { searchParams: RawParams; basePath: string; shop?: string }) {
   const f = parseFilters(searchParams);
-  const [result, brands] = await Promise.all([
-    apiGet<Page<ProductCard>>(
-      `/catalog/products${toQuery({
+  const productsPath = `/catalog/products${toQuery({
         q: f.q,
         brand: f.brand,
         condition: f.condition,
@@ -47,11 +45,12 @@ export async function CatalogBrowser({ searchParams, basePath, shop }: { searchP
         minRating: f.minRating,
         sort: f.sort,
         shop,
-        page: f.page,
         pageSize: 24,
-      })}`,
-      { tags: [cacheTags.catalog, ...(shop ? [cacheTags.shop(shop)] : [])] },
-    ),
+      })}`;
+  const [result, brands] = await Promise.all([
+    apiGet<Page<ProductCard>>(`${productsPath}${productsPath.includes('?') ? '&' : '?'}page=${f.page}`, {
+      tags: [cacheTags.catalog, ...(shop ? [cacheTags.shop(shop)] : [])],
+    }),
     shop ? Promise.resolve([] as Brand[]) : apiGet<Brand[]>('/brands', { revalidate: 300, tags: [cacheTags.brands] }),
   ]);
 
@@ -83,8 +82,7 @@ export async function CatalogBrowser({ searchParams, basePath, shop }: { searchP
         </div>
         {result.items.length ? (
           <>
-            <ProductGrid products={result.items} priorityCount={4} />
-            <Pagination page={result.page} totalPages={result.totalPages} hrefFor={hrefFor} />
+            <InfiniteProductGrid key={productsPath} first={result} path={productsPath} priorityCount={4} nextHref={hrefFor(result.page + 1)} />
           </>
         ) : (
           <EmptyState

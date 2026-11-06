@@ -10,8 +10,8 @@ export function SiteFooter() {
       title: 'Explorer',
       links: [
         { href: '/catalogue', label: 'Catalogue' },
-        { href: '/boutiques', label: 'Boutiques' },
-        { href: '/promotions', label: 'Promotions' },
+        { href: '/boutiques', label: 'Vendeurs' },
+        { href: '/promotions', label: 'Promo du jour' },
         { href: '/comment-ca-marche', label: 'Comment ça marche' },
       ],
     },

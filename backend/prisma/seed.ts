@@ -31,6 +31,7 @@ const BRANDS: Array<{ name: string; featured: boolean }> = [
   { name: 'Nokia', featured: false },
 ];
 
+const MAIN_CATEGORIES = ['Téléphones', 'Ordinateurs', 'Smart TV'];
 const CATEGORIES = ['Smartphones', 'Téléphones à touches', 'Tablettes'];
 
 async function seedReferentials() {
@@ -41,10 +42,20 @@ async function seedReferentials() {
       create: { name: b.name, slug: slugify(b.name), featured: b.featured, sortOrder: i },
     });
   }
-  for (const [i, name] of CATEGORIES.entries()) {
-    await prisma.category.upsert({ where: { slug: slugify(name) }, update: {}, create: { name, slug: slugify(name), sortOrder: i } });
+  // Rayons principaux (Téléphones, Ordinateurs, Smart TV) ; les catégories de téléphones en sont des sous-catégories.
+  const roots = new Map<string, string>();
+  for (const [i, name] of MAIN_CATEGORIES.entries()) {
+    const c = await prisma.category.upsert({ where: { slug: slugify(name) }, update: {}, create: { name, slug: slugify(name), sortOrder: i * 10 } });
+    roots.set(name, c.id);
   }
-  console.log(`Référentiels : ${BRANDS.length} marques, ${CATEGORIES.length} catégories.`);
+  for (const [i, name] of CATEGORIES.entries()) {
+    await prisma.category.upsert({
+      where: { slug: slugify(name) },
+      update: {},
+      create: { name, slug: slugify(name), sortOrder: i + 1, parentId: roots.get('Téléphones') },
+    });
+  }
+  console.log(`Référentiels : ${BRANDS.length} marques, ${MAIN_CATEGORIES.length + CATEGORIES.length} catégories.`);
 }
 
 // ─── Démonstration ──────────────────────────────────────────────────────────
@@ -82,7 +93,7 @@ interface DemoProduct {
   defects?: string;
   warranty?: string;
   accessories?: string;
-  promo?: { price: number; startsInDays?: number; days: number };
+  promo?: { price: number; startsInDays?: number };
   reviews?: number[];
 }
 
@@ -94,10 +105,10 @@ const SHOPS: Array<{ name: string; city: string; district: string; whatsapp: str
     whatsapp: '+22890000001',
     hue: 160,
     products: [
-      { brand: 'Apple', model: 'iPhone 13', storageGb: 128, ramGb: 4, price: 365000, condition: 'LIKE_NEW', color: 'Minuit', warranty: '3 mois boutique', accessories: 'Câble USB-C vers Lightning', specs: { screen: '6,1 pouces OLED', processor: 'Apple A15 Bionic', os: 'iOS', batteryHealth: '89 %', connectivity: '5G, Wi-Fi 6' }, promo: { price: 339000, days: 10 }, reviews: [5, 4, 5] },
+      { brand: 'Apple', model: 'iPhone 13', storageGb: 128, ramGb: 4, price: 365000, condition: 'LIKE_NEW', color: 'Minuit', warranty: '3 mois boutique', accessories: 'Câble USB-C vers Lightning', specs: { screen: '6,1 pouces OLED', processor: 'Apple A15 Bionic', os: 'iOS', batteryHealth: '89 %', connectivity: '5G, Wi-Fi 6' }, promo: { price: 339000 }, reviews: [5, 4, 5] },
       { brand: 'Apple', model: 'iPhone 12', storageGb: 64, ramGb: 4, price: 255000, condition: 'USED_GOOD', color: 'Bleu', defects: 'Légères rayures sur le contour', specs: { screen: '6,1 pouces OLED', processor: 'Apple A14 Bionic', batteryHealth: '84 %' }, reviews: [4] },
       { brand: 'Samsung', model: 'Galaxy S23', storageGb: 256, ramGb: 8, price: 520000, condition: 'NEW', color: 'Noir', warranty: '12 mois', specs: { screen: '6,1 pouces Dynamic AMOLED 2X', processor: 'Snapdragon 8 Gen 2', battery: '3 900 mAh', connectivity: '5G' } },
-      { brand: 'Samsung', model: 'Galaxy A15', storageGb: 128, ramGb: 4, price: 98000, condition: 'NEW', color: 'Bleu nuit', warranty: '12 mois', specs: { screen: '6,5 pouces Super AMOLED', battery: '5 000 mAh', sim: 'Double SIM' }, promo: { price: 89000, days: 7 } },
+      { brand: 'Samsung', model: 'Galaxy A15', storageGb: 128, ramGb: 4, price: 98000, condition: 'NEW', color: 'Bleu nuit', warranty: '12 mois', specs: { screen: '6,5 pouces Super AMOLED', battery: '5 000 mAh', sim: 'Double SIM' }, promo: { price: 89000 } },
       { brand: 'Apple', model: 'iPhone 11', storageGb: 64, price: 175000, condition: 'USED_FAIR', availability: 'OUT_OF_STOCK', stock: 0, defects: 'Écran remplacé (pièce compatible)' },
       { brand: 'Google', model: 'Pixel 7', storageGb: 128, ramGb: 8, price: 210000, condition: 'REFURBISHED', color: 'Neige', warranty: '6 mois', specs: { processor: 'Google Tensor G2', os: 'Android 14' } },
     ],
@@ -109,11 +120,11 @@ const SHOPS: Array<{ name: string; city: string; district: string; whatsapp: str
     whatsapp: '+22891000002',
     hue: 25,
     products: [
-      { brand: 'Tecno', model: 'Camon 20', storageGb: 256, ramGb: 8, price: 125000, condition: 'NEW', color: 'Gris', warranty: '12 mois', specs: { screen: '6,67 pouces AMOLED', battery: '5 000 mAh', rearCamera: '64 Mpx' }, promo: { price: 112000, days: 14 }, reviews: [5, 5] },
+      { brand: 'Tecno', model: 'Camon 20', storageGb: 256, ramGb: 8, price: 125000, condition: 'NEW', color: 'Gris', warranty: '12 mois', specs: { screen: '6,67 pouces AMOLED', battery: '5 000 mAh', rearCamera: '64 Mpx' }, promo: { price: 112000 }, reviews: [5, 5] },
       { brand: 'Tecno', model: 'Spark 10', storageGb: 128, ramGb: 4, price: 69000, condition: 'NEW', color: 'Bleu', warranty: '12 mois', specs: { battery: '5 000 mAh', sim: 'Double SIM' } },
       { brand: 'Infinix', model: 'Hot 30', storageGb: 128, ramGb: 8, price: 85000, condition: 'NEW', color: 'Vert', warranty: '12 mois', specs: { screen: '6,78 pouces', battery: '5 000 mAh' }, reviews: [4, 3] },
       { brand: 'Infinix', model: 'Note 30', storageGb: 256, ramGb: 8, price: 118000, condition: 'NEW', availability: 'TEMPORARILY_UNAVAILABLE', color: 'Noir' },
-      { brand: 'itel', model: 'A70', storageGb: 64, ramGb: 3, price: 48000, condition: 'NEW', warranty: '6 mois', promo: { price: 44000, startsInDays: 2, days: 7 } },
+      { brand: 'itel', model: 'A70', storageGb: 64, ramGb: 3, price: 48000, condition: 'NEW', warranty: '6 mois', promo: { price: 44000, startsInDays: 2 } },
       { brand: 'Nokia', model: '105', storageGb: 1, price: 12000, condition: 'NEW', specs: { battery: '1 000 mAh', sim: 'Double SIM' } },
     ],
   },
@@ -124,7 +135,7 @@ const SHOPS: Array<{ name: string; city: string; district: string; whatsapp: str
     whatsapp: '+22892000003',
     hue: 220,
     products: [
-      { brand: 'Xiaomi', model: 'Redmi Note 12', storageGb: 128, ramGb: 6, price: 115000, condition: 'NEW', color: 'Gris onyx', warranty: '12 mois', specs: { screen: '6,67 pouces AMOLED 120 Hz', processor: 'Snapdragon 685', battery: '5 000 mAh' }, promo: { price: 99000, days: 5 }, reviews: [5, 4, 4] },
+      { brand: 'Xiaomi', model: 'Redmi Note 12', storageGb: 128, ramGb: 6, price: 115000, condition: 'NEW', color: 'Gris onyx', warranty: '12 mois', specs: { screen: '6,67 pouces AMOLED 120 Hz', processor: 'Snapdragon 685', battery: '5 000 mAh' }, promo: { price: 99000 }, reviews: [5, 4, 4] },
       { brand: 'Xiaomi', model: 'Redmi 12C', storageGb: 64, ramGb: 4, price: 62000, condition: 'NEW', color: 'Bleu' },
       { brand: 'Samsung', model: 'Galaxy A54', storageGb: 128, ramGb: 8, price: 195000, condition: 'LIKE_NEW', color: 'Lime', defects: 'Aucun défaut visible', specs: { connectivity: '5G' } },
       { brand: 'Huawei', model: 'P30 Lite', storageGb: 128, ramGb: 4, price: 78000, condition: 'USED_GOOD', defects: 'Petite rayure au dos', specs: { os: 'Android 10 (sans services Google récents)' } },
@@ -236,7 +247,8 @@ async function seedDemo() {
       });
 
       if (d.promo) {
-        const startsAt = new Date(now + (d.promo.startsInDays ?? 0) * DAY - (d.promo.startsInDays ? 0 : DAY));
+        // Promo du jour : 24 h maximum (déjà commencée depuis 2 h, ou programmée dans quelques jours).
+        const startsAt = new Date(d.promo.startsInDays ? now + d.promo.startsInDays * DAY : now - 2 * 3600_000);
         const promo = await prisma.promotion.create({
           data: {
             productId: product.id,
@@ -244,7 +256,7 @@ async function seedDemo() {
             promoPrice: d.promo.price,
             referencePrice: d.price,
             startsAt,
-            endsAt: new Date(startsAt.getTime() + d.promo.days * DAY),
+            endsAt: new Date(startsAt.getTime() + 24 * 3600_000),
             conditions: 'Offre de démonstration',
             isDemo: true,
           },

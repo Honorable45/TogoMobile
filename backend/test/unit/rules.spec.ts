@@ -54,7 +54,7 @@ describe('Règles de promotion', () => {
     expect(referencePrice(90000, [100000])).toBe(90000);
   });
   it('accepte une promotion valide', () => {
-    expect(validatePromotion({ promoPrice: 85000, startsAt: now, endsAt: inDays(7) }, 100000, { now, maxDays: 90 })).toEqual([]);
+    expect(validatePromotion({ promoPrice: 85000, startsAt: now, endsAt: new Date(now.getTime() + 20 * 3600_000) }, 100000, { now, maxHours: 24 })).toEqual([]);
   });
   it.each([
     [0, 'positif'],
@@ -62,16 +62,16 @@ describe('Règles de promotion', () => {
     [100000, 'inférieur'],
     [120000, 'inférieur'],
   ])('rejette le prix promotionnel %s', (price, word) => {
-    const errors = validatePromotion({ promoPrice: price, startsAt: now, endsAt: inDays(7) }, 100000, { now, maxDays: 90 });
+    const errors = validatePromotion({ promoPrice: price, startsAt: now, endsAt: inDays(7) }, 100000, { now, maxHours: 24 });
     expect(errors.join(' ')).toContain(word);
   });
   it('rejette une date de fin antérieure au début', () => {
-    const errors = validatePromotion({ promoPrice: 80000, startsAt: inDays(5), endsAt: inDays(2) }, 100000, { now, maxDays: 90 });
+    const errors = validatePromotion({ promoPrice: 80000, startsAt: inDays(5), endsAt: inDays(2) }, 100000, { now, maxHours: 24 });
     expect(errors.join(' ')).toContain('postérieure');
   });
   it('rejette une promotion antidatée ou trop longue', () => {
-    expect(validatePromotion({ promoPrice: 80000, startsAt: inDays(-3), endsAt: inDays(2) }, 100000, { now, maxDays: 90 }).length).toBeGreaterThan(0);
-    expect(validatePromotion({ promoPrice: 80000, startsAt: now, endsAt: inDays(120) }, 100000, { now, maxDays: 90 }).length).toBeGreaterThan(0);
+    expect(validatePromotion({ promoPrice: 80000, startsAt: inDays(-3), endsAt: inDays(2) }, 100000, { now, maxHours: 24 }).length).toBeGreaterThan(0);
+    expect(validatePromotion({ promoPrice: 80000, startsAt: now, endsAt: inDays(2) }, 100000, { now, maxHours: 24 }).length).toBeGreaterThan(0);
   });
   it('déduit la phase des dates : programmée, en cours, terminée', () => {
     const p = { status: 'ACTIVE' as const, startsAt: inDays(1), endsAt: inDays(3) };

@@ -47,7 +47,7 @@ Cette règle s'inspire des pratiques reconnues de protection des consommateurs (
 ### Autres règles
 
 - Prix promotionnel entier, strictement positif, strictement inférieur au prix de référence, réduction d'au moins 1 %.
-- La date de fin doit être postérieure au début et dans le futur. Le début ne peut pas être antidaté (tolérance de 5 min). Durée maximale de 90 jours (`RULE_MAX_PROMOTION_DAYS`).
+- La date de fin doit être postérieure au début et dans le futur. Le début ne peut pas être antidaté (tolérance de 5 min). Durée maximale de 24 heures : « Promo du jour » (`RULE_MAX_PROMOTION_HOURS`).
 - Uniquement sur une annonce publiée, disponible, d'une boutique active. Pas de chevauchement entre deux promotions actives d'un même produit (vérifié sous verrou).
 - La réduction affichée est arrondie **à l'inférieur**, pour ne jamais exagérer l'avantage.
 - **Activation et expiration automatiques** : une promotion `ACTIVE` ne s'applique qu'entre `startsAt` (inclus) et `endsAt` (exclu), et seulement si l'annonce est publique et disponible. Le calcul se fait à chaque requête, sans tâche planifiée.

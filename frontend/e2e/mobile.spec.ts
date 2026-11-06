@@ -2,13 +2,24 @@ import { expect, test } from '@playwright/test';
 
 /** Spécificités mobiles (projet « mobile » : Pixel 7, écran tactile). */
 
+test('accueil mobile : recherche dans l’en-tête, catégories et produits filtrables par type', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Devenir vendeur' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('searchbox', { name: 'Rechercher un produit' })).toBeVisible();
+  for (const name of ['Téléphones', 'Ordinateurs', 'Smart TV']) await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Type de produit' }).getByRole('link', { name: 'Neuf' }).click();
+  await expect(page).toHaveURL(/type=neuf/);
+  for (const text of await page.locator('#produits article').allInnerTexts()) expect(text).not.toMatch(/Occasion|Reconditionné|Comme neuf/);
+});
+
 test('navigation inférieure et filtres dans un panneau dédié', async ({ page }) => {
-  await page.goto('/catalogue');
-  // Navigation sur une seconde ligne de l'en-tête, sans menu hamburger.
+  await page.goto('/promotions');
+  // Barre d'onglets fixée en bas de l'écran : Accueil, Vendeurs, Promo du jour, Compte.
   const nav = page.getByRole('navigation', { name: 'Navigation mobile' });
   await expect(nav.getByRole('link')).toHaveCount(4);
-  await expect(nav.getByRole('link', { name: 'Catalogue' })).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('banner').getByRole('link', { name: 'Devenir vendeur' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Promo du jour' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav).toBeInViewport();
+  await page.goto('/catalogue');
   const filters = page.getByRole('form', { name: 'Filtres du catalogue' });
   await expect(filters).toBeHidden();
   await page.getByRole('button', { name: 'Filtres' }).click();
