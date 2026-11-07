@@ -52,6 +52,7 @@ Chaque section a son propre fichier dans `components/home/sections/` :
 | Haut des pages intérieures (titre, sous-titre, « Retour ») | `components/layout/page-banner.tsx` |
 | Boutons (noir, contour, WhatsApp…) | `components/ui/button.tsx` |
 | Formulaires de connexion et d'inscription | `components/auth-forms.tsx` |
+| Les règles des formulaires (champ obligatoire, téléphone, mot de passe…) et leurs messages | `lib/validation.ts` (chaque formulaire liste ses règles en haut de son fichier) |
 | Une page du site | `app/(site)/<nom-de-la-page>/page.tsx` |
 
 ## API Django (backend-django)
