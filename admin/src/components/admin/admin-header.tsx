@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ExternalLink, LogOut } from 'lucide-react';
 import { useSession } from '@/components/session';
-import { LogoMark } from '@/components/layout/logo';
 import { brand } from '@/config/brand';
 
 /** En-tête de l'administration : identité, lien vers le site public, déconnexion. */
@@ -13,8 +12,8 @@ export function AdminHeader() {
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between gap-3">
         <Link href="/" className="flex min-h-11 items-center gap-2" aria-label={`Administration ${brand.name} — tableau de bord`}>
-          <LogoMark />
-          <span className="display text-[21px] text-ink">{brand.name}</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo.svg" alt="" width={84} height={22} className="h-[22px] w-auto bg-transparent" />
           <span className="eyebrow hidden sm:inline">Administration</span>
         </Link>
         <div className="flex items-center gap-1 text-sm">

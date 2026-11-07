@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { LogoMark } from '@/components/layout/logo';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
 import { Alert } from '@/components/ui/misc';
@@ -47,8 +46,8 @@ export function AdminLoginForm() {
   return (
     <div className="w-full max-w-md">
       <div className="mb-6 flex items-center justify-center gap-2">
-        <LogoMark />
-        <span className="display text-[24px]">{brand.name}</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo.svg" alt={brand.name} width={107} height={28} className="h-7 w-auto bg-transparent" />
       </div>
       <div className="rounded-3xl border border-line bg-surface p-6 shadow-card sm:p-8">
         <h1 className="display text-[30px]">Administration</h1>

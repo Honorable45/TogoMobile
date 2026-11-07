@@ -70,7 +70,12 @@ export default async function HomePage() {
         <div className="container-page pt-[164px] md:pt-[128px]">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="display text-[48px] md:text-[80px]">{brand.name}</h1>
+              <h1>
+                <span className="sr-only">{brand.name}</span>
+                {/* Logotype en grand, comme « iPhone » sur apple.com */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/brand/logo.svg" alt="" width={366} height={96} className="h-12 w-auto bg-transparent md:h-[76px]" />
+              </h1>
               <p className="mt-1 text-[19px] text-muted md:text-[21px]">{brand.motto}.</p>
             </div>
             <form action="/catalogue" role="search" className="hidden w-full max-w-sm md:block">

@@ -1,21 +1,26 @@
 import Link from 'next/link';
 import { brand } from '@/config/brand';
 
+/**
+ * Symbole bonplan : la cible (anneau + point), fichiers d'origine dans public/brand/.
+ * `inverted` : version pour fond sombre.
+ */
 export function LogoMark({ className = 'size-8', inverted }: { className?: string; inverted?: boolean }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="10" className={inverted ? 'fill-white' : 'fill-navy'} />
-      <rect x="10.5" y="6.5" width="11" height="19" rx="2.5" fill="none" className={inverted ? 'stroke-navy' : 'stroke-white'} strokeWidth="1.8" />
-      <circle cx="16" cy="22" r="1.2" className={inverted ? 'fill-promo-600' : 'fill-promo-100'} />
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      <rect width="64" height="64" rx="14" fill={inverted ? '#F5F7FA' : '#0A0B0D'} />
+      <circle cx="32" cy="32" r="19" fill="none" stroke={inverted ? '#0A6FB0' : '#6CCBFF'} strokeWidth="8" />
+      <circle cx="32" cy="32" r="5.5" fill={inverted ? '#0A6FB0' : '#6CCBFF'} />
     </svg>
   );
 }
 
-export function Logo({ inverted }: { inverted?: boolean }) {
+/** Logotype complet (« b◎nplan »), tracé vectoriel fourni : net à toutes les tailles. */
+export function Logo({ inverted, className = 'h-[22px]' }: { inverted?: boolean; className?: string }) {
   return (
-    <Link href="/" className="flex min-h-11 shrink-0 items-center gap-2" aria-label={`${brand.name} — accueil`}>
-      <LogoMark inverted={inverted} />
-      <span className={`display text-[21px] ${inverted ? 'text-white' : 'text-ink'}`}>{brand.name}</span>
+    <Link href="/" className="flex min-h-11 shrink-0 items-center" aria-label={`${brand.name} — accueil`}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique, next/image n'apporte rien ici */}
+      <img src={inverted ? '/brand/logo-inverse.svg' : '/brand/logo.svg'} alt="" width={84} height={22} className={`${className} w-auto bg-transparent`} />
     </Link>
   );
 }

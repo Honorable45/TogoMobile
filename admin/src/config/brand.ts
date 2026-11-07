@@ -4,8 +4,8 @@
  * Aucune certification, agrément ou partenariat de marque n'est revendiqué.
  */
 export const brand = {
-  name: 'TogoMobile',
-  shortName: 'TogoMobile',
+  name: 'bonplan',
+  shortName: 'bonplan',
   tagline: 'Les téléphones des boutiques du Togo, au même endroit',
   /** Accroche de l'accueil (6 à 8 mots, 3 verbes). */
   motto: 'Comparer, choisir et commander en confiance',
