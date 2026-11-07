@@ -5,7 +5,7 @@ import { FollowShopButton } from '@/components/favorite-buttons';
 import { CatalogBrowser, type RawParams } from '@/components/product/catalog-browser';
 import { ReportButton } from '@/components/report-button';
 import { ReviewsSection } from '@/components/reviews';
-import { PromoCarousel } from '@/components/shop/promo-carousel';
+import { ProductRow } from '@/components/product/product-card';
 import { ShopLogo } from '@/components/shop/shop-card';
 import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon } from '@/components/ui/brand-icons';
 import { Alert, DemoBadge, Stars } from '@/components/ui/misc';
@@ -128,15 +128,20 @@ export default async function ShopPage({ params, searchParams }: Props) {
             Les annonces de cette boutique ne sont pas disponibles pour le moment. Vous pouvez suivre la boutique pour la retrouver facilement.
           </Alert>
         )}
-        {promos && promos.items.length > 0 && <PromoCarousel promotions={promos.items} />}
+        {promos && promos.items.length > 0 && (
+          <section aria-labelledby="promos-boutique">
+            <h2 id="promos-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Promotions en cours.</h2>
+            <ProductRow products={promos.items} label="Promotions en cours" />
+          </section>
+        )}
         {active && (
           <section aria-labelledby="catalogue-boutique">
-            <h2 id="catalogue-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Tous les téléphones</h2>
+            <h2 id="catalogue-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Tous les téléphones.</h2>
             <CatalogBrowser searchParams={sp} basePath={`/boutiques/${shop.slug}`} shop={shop.slug} />
           </section>
         )}
         <section aria-labelledby="avis-boutique">
-          <h2 id="avis-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Avis sur la boutique</h2>
+          <h2 id="avis-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Avis sur la boutique.</h2>
           <ReviewsSection initial={reviews} endpoint={`/shops/${shop.slug}/reviews`} showProduct />
         </section>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-xs text-muted">
