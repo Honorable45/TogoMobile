@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          // Politique de contenu minimale et sans risque de casse : pas d'affichage dans un cadre d'un autre site,
+          // pas de plugins, formulaires envoyés au site lui-même, balise <base> verrouillée.
+          // (Une restriction des scripts demanderait des nonces sur le rendu de Next.js.)
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" },
         ],
       },
     ];

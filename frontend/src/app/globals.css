@@ -203,26 +203,6 @@
 
 /* ─── Mouvement ───────────────────────────────────────────────────────────── */
 
-@keyframes reveal-word {
-  from {
-    opacity: 0;
-    transform: translateY(0.45em);
-    filter: blur(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-
-/* Mot révélé : le délai est fourni par style={{ animationDelay }} */
-@utility reveal-word {
-  display: inline-block;
-  opacity: 0;
-  animation: reveal-word 700ms var(--ease-soft) forwards;
-}
-
 @utility lift {
   transition:
     transform 200ms var(--ease-soft),
