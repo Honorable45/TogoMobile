@@ -27,6 +27,8 @@ export const brand = {
   siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, ''),
   /** Application d'administration, déployée séparément (dossier admin/). */
   adminUrl: (process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001').replace(/\/$/, ''),
+  /** ID client OAuth Google (identique à GOOGLE_CLIENT_ID de l'API). Vide : pas de bouton Google. */
+  googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
   contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL || '',
   /** Liens sociaux officiels : n'afficher que ceux qui existent réellement. */
   social: {

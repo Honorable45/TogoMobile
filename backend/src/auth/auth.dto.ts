@@ -27,6 +27,13 @@ export class RegisterDto {
   password: string;
 }
 
+export class GoogleLoginDto {
+  @ApiProperty({ description: 'Jeton d’identité (JWT) renvoyé par le bouton « Se connecter avec Google »' })
+  @IsString()
+  @Length(100, 4096)
+  credential: string;
+}
+
 export class LoginDto {
   @ApiProperty({ description: 'Adresse e-mail ou numéro de téléphone' })
   @Trim()

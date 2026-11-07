@@ -109,7 +109,7 @@ function CreateAd({ onCreated }: { onCreated: () => Promise<void> }) {
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!file) {
-      setError('Ajoutez une image (1920 × 1080 recommandé, 1200 px de large au minimum).');
+      setError('Ajoutez une image (bannière 1920 × 720 recommandée, 1200 px de large au minimum).');
       return;
     }
     const fd = new FormData();
@@ -144,7 +144,7 @@ function CreateAd({ onCreated }: { onCreated: () => Promise<void> }) {
             <span className="flex flex-col items-center gap-2 p-4">
               <ImagePlus className="size-7" aria-hidden />
               Choisir l’image
-              <span className="text-xs">JPEG, PNG, WebP · 1920 × 1080 recommandé · 8 Mo max</span>
+              <span className="text-xs">JPEG, PNG, WebP · 1920 × 720 recommandé (bannière) · 8 Mo max</span>
             </span>
           )}
           <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" onChange={(e) => pick(e.target.files?.[0] ?? null)} aria-label="Image de la publicité" />

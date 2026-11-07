@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Laptop, Search, SearchX, ShieldCheck, Smartphone, Store, Tag, Tv } from 'lucide-react';
-import { RevealWords, revealEnd } from '@/components/layout/reveal';
+import { ArrowRight, Laptop, Search, SearchX, ShieldCheck, Smartphone, Store, Tv } from 'lucide-react';
 import { SortSelect } from '@/components/product/catalog-filters';
 import { ProductRow } from '@/components/product/product-card';
 import { InfiniteProductGrid } from '@/components/ui/infinite-list';
@@ -8,16 +7,12 @@ import { AdBar } from '@/components/home/ad-bar';
 import { HeroBackdrop } from '@/components/home/hero-backdrop';
 import { slidesFromAds, slidesFromPromotions } from '@/components/home/hero-slides';
 import { ShopCard } from '@/components/shop/shop-card';
-import { FacebookIcon, InstagramIcon, TikTokIcon } from '@/components/ui/brand-icons';
 import { ButtonLink, buttonClass } from '@/components/ui/button';
 import { EmptyState, SectionTitle } from '@/components/ui/misc';
 import { brand } from '@/config/brand';
 import { apiGet, cacheTags, toQuery } from '@/lib/api-server';
 import { MAIN_CATEGORIES, PRODUCT_TYPES, plural } from '@/lib/format';
 import type { HomeData, Page, ProductCard } from '@/lib/types';
-
-const NAME_STEP = 180;
-const MOTTO_STEP = 110;
 
 const CATEGORY_ICONS = { telephones: Smartphone, ordinateurs: Laptop, 'smart-tv': Tv } as const;
 const SORTS = ['recent', 'price_asc', 'price_desc', 'discount', 'rating', 'popular'];
@@ -50,60 +45,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const categoryCount = new Map(MAIN_CATEGORIES.map((c, i) => [c.slug, categoryPages[i].total]));
   // Fond de l'accueil : publicités de l'administration, sinon promotions en cours des boutiques.
   const slides = data.heroAds?.length ? slidesFromAds(data.heroAds) : slidesFromPromotions(data.promotions);
-  const nameEnd = revealEnd(brand.name, 150, NAME_STEP);
-  const mottoStart = nameEnd - 350;
-  const buttonsDelay = revealEnd(brand.motto, mottoStart, MOTTO_STEP);
-  const social = [
-    { href: brand.social.facebook, label: 'Facebook', Icon: FacebookIcon },
-    { href: brand.social.instagram, label: 'Instagram', Icon: InstagramIcon },
-    { href: brand.social.tiktok, label: 'TikTok', Icon: TikTokIcon },
-  ].filter((s) => s.href);
 
   return (
     <>
-      <section className="relative isolate hidden min-h-[100svh] items-center justify-center overflow-hidden bg-navy text-white md:flex">
-        {slides.length > 0 ? (
+      {/* Ordinateur : bannière d'affiches publicitaires, sans texte. Mobile : barre de pubs dans l'en-tête. */}
+      <h1 className="sr-only">{brand.name} : {brand.motto}</h1>
+      {slides.length > 0 ? (
+        <section aria-label="Publicités" className="container-page hidden pt-[100px] md:block">
           <HeroBackdrop slides={slides} />
-        ) : brand.heroImage ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={brand.heroImage} alt="" className="absolute inset-0 -z-20 size-full object-cover" fetchPriority="high" />
-            <div className="absolute inset-0 -z-10 bg-navy/55" aria-hidden />
-          </>
-        ) : null}
-        <div className={`container-page flex flex-col items-center pt-40 text-center md:pt-32 ${slides.length ? 'pb-48 sm:pb-44' : 'pb-16'}`}>
-          <h1 className="display text-[64px] md:text-[104px] lg:text-[128px]">
-            <RevealWords text={brand.name} start={150} step={NAME_STEP} />
-          </h1>
-          <p className="display mt-4 max-w-2xl text-[22px] italic text-white/90 md:text-[30px]">
-            <RevealWords text={brand.motto} start={mottoStart} step={MOTTO_STEP} />
-          </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-3 opacity-0 animate-slide-up" style={{ animationDelay: `${buttonsDelay}ms` }}>
-            <ButtonLink href="/catalogue" variant="glass" size="lg">
-              <Smartphone className="size-5" aria-hidden /> Catalogue
-            </ButtonLink>
-            <ButtonLink href="/promotions" variant="glass" size="lg">
-              <Tag className="size-5" aria-hidden /> Promo du jour
-            </ButtonLink>
-            <ButtonLink href="/devenir-vendeur" variant="glass" size="lg">
-              <Store className="size-5" aria-hidden /> Vendre
-            </ButtonLink>
-          </div>
-          {social.length > 0 && (
-            <div className="mt-8 flex gap-2 opacity-0 animate-slide-up" style={{ animationDelay: `${buttonsDelay + 150}ms` }}>
-              {social.map((s) => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="glass inline-flex size-11 items-center justify-center rounded-full">
-                  <s.Icon className="size-[18px]" />
-                </a>
-              ))}
-            </div>
-          )}
+        </section>
+      ) : brand.heroImage ? (
+        <div className="container-page hidden pt-[100px] md:block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={brand.heroImage} alt="" className="aspect-[8/3] w-full rounded-[32px] object-cover" fetchPriority="high" />
         </div>
-      </section>
+      ) : null}
 
       {/* Mobile : publicités dans l'en-tête, au-dessus de la recherche (repliées au défilement). */}
       <AdBar slides={slides} />
-      <div className={`container-page space-y-8 pb-16 md:space-y-24 md:py-24 ${slides.length ? 'pt-[228px]' : 'pt-[140px]'}`}>
+      <div className={`container-page space-y-8 pb-16 md:space-y-24 md:pb-24 md:pt-16 ${slides.length ? 'pt-[228px]' : 'pt-[140px]'}`}>
         {/* Sur mobile, la recherche est dans l'en-tête. */}
         <section aria-labelledby="recherche" className="hidden md:block">
           <p className="eyebrow mb-2">Recherche</p>

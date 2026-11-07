@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { Field, Input } from './ui/field';
 import { Alert } from './ui/misc';
 import { PageBanner } from './layout/page-banner';
+import { GoogleButton } from './google-button';
 
 /** N'accepte que des redirections internes (évite les redirections ouvertes). */
 export function safeNext(next: string | null, fallback = '/') {
@@ -91,7 +92,8 @@ export function LoginForm() {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4" noValidate>
+      <GoogleButton context="signin" onSuccess={(me) => window.location.assign(redirectAfterAuth(me, next))} />
+      <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
         <Field label="E-mail ou numéro de téléphone">
           {(p) => <Input {...p} name="identifier" autoComplete="username" required placeholder="vous@exemple.com ou 90 12 34 56" />}
         </Field>
@@ -157,7 +159,15 @@ export function RegisterForm() {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4" noValidate>
+      <GoogleButton context="signup" onSuccess={(me) => window.location.assign(redirectAfterAuth(me, next))} />
+      {brand.googleClientId && (
+        <p className="-mt-1 mb-4 text-center text-xs text-muted">
+          Avec Google, vous acceptez les{' '}
+          <Link href="/conditions" className="underline" target="_blank">conditions d’utilisation</Link> et la{' '}
+          <Link href="/confidentialite" className="underline" target="_blank">politique de confidentialité</Link>.
+        </p>
+      )}
+      <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
         <Field label="Nom complet" error={errors.name}>
           {(p) => <Input {...p} name="name" autoComplete="name" required minLength={2} maxLength={80} />}
         </Field>

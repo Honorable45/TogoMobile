@@ -40,6 +40,7 @@
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "express": "^5",
+    "google-auth-library": "^10",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "prom-client": "^15",

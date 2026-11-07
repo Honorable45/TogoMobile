@@ -86,6 +86,8 @@ function loadEnv() {
     /** lax (recommandé avec le proxy Next.js) ou none (front et API sur des sites différents, HTTPS obligatoire). */
     cookieSameSite: (str('SESSION_COOKIE_SAMESITE', 'lax') as 'lax' | 'none' | 'strict'),
     sessionDays: int('SESSION_DAYS', 30),
+    /** Identifiant client OAuth Google (console Google Cloud). Vide : connexion Google désactivée. */
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     trustProxy: int('TRUST_PROXY_HOPS', 1),
 
     storage: {

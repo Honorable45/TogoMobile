@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import { authFailures } from '../observability/metrics';
 import { env } from '../config/env';
 import { AuditService } from '../common/audit.service';
@@ -40,6 +41,61 @@ export class AuthService {
       select: { id: true },
     });
     await this.audit.log(user.id, 'user.register', 'User', user.id);
+    return user;
+  }
+
+  private googleClient?: OAuth2Client;
+
+  /**
+   * Connexion avec Google. Le jeton d'identité est vérifié (signature Google, audience = notre client,
+   * expiration) ; puis, dans l'ordre : compte déjà lié à ce Google, compte existant avec la même adresse
+   * e-mail vérifiée (lié au passage), ou nouveau compte client.
+   */
+  async loginWithGoogle(credential: string) {
+    const clientId = env().googleClientId;
+    if (!clientId) throw new ServiceUnavailableException('La connexion avec Google n’est pas encore disponible.');
+    this.googleClient ??= new OAuth2Client(clientId);
+
+    let payload: import('google-auth-library').TokenPayload | undefined;
+    try {
+      payload = (await this.googleClient.verifyIdToken({ idToken: credential, audience: clientId })).getPayload();
+    } catch {
+      payload = undefined;
+    }
+    if (!payload?.sub) {
+      authFailures.inc({ reason: 'google' });
+      throw new UnauthorizedException('La connexion avec Google a échoué. Réessayez.');
+    }
+    const googleId = payload.sub;
+    const email = payload.email_verified && payload.email ? payload.email.toLowerCase() : undefined;
+    const select = { id: true, status: true, googleId: true } as const;
+    const ensureActive = (u: { status: string }) => {
+      if (u.status !== 'ACTIVE') throw new UnauthorizedException('Ce compte est suspendu. Contactez le support de la plateforme.');
+    };
+
+    const linked = await this.prisma.user.findUnique({ where: { googleId }, select });
+    if (linked) {
+      ensureActive(linked);
+      return linked;
+    }
+    if (!email) throw new BadRequestException('Votre compte Google n’a pas d’adresse e-mail vérifiée.');
+
+    const byEmail = await this.prisma.user.findUnique({ where: { email }, select });
+    if (byEmail) {
+      ensureActive(byEmail);
+      if (byEmail.googleId) throw new ConflictException('Ce compte est déjà lié à un autre compte Google.');
+      await this.prisma.user.update({ where: { id: byEmail.id }, data: { googleId } });
+      await this.audit.log(byEmail.id, 'user.google_link', 'User', byEmail.id);
+      return byEmail;
+    }
+
+    // Nouveau compte client. Mot de passe aléatoire inutilisable : « Mot de passe oublié » permet d'en choisir un.
+    const name = (payload.name || email.split('@')[0]).trim().slice(0, 80) || 'Client';
+    const user = await this.prisma.user.create({
+      data: { name, email, googleId, passwordHash: await hashPassword(randomToken()), role: 'CUSTOMER' },
+      select,
+    });
+    await this.audit.log(user.id, 'user.register', 'User', user.id, { method: 'google' });
     return user;
   }
 

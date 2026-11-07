@@ -2,35 +2,39 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import type { HeroSlide } from './hero-slides';
 
 const INTERVAL_MS = 5000;
 
-function SlideLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const cls = 'mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-white underline-offset-4 hover:underline';
+function PosterLink({ slide, active, className, children }: { slide: HeroSlide; active: boolean; className: string; children: React.ReactNode }) {
+  // Aucun texte visible : le nom de l'annonceur et le titre servent d'intitulé aux lecteurs d'écran.
+  const label = `${slide.kind}${slide.source ? ` ${slide.source}` : ''} : ${slide.title}`;
+  const common = { className, 'aria-label': label, 'aria-hidden': !active || undefined, tabIndex: active ? undefined : -1 };
+  if (!slide.href) return <div {...common} role="img">{children}</div>;
   // Lien externe d'annonceur : nouvel onglet, sans transmettre la page d'origine, marqué « sponsored ».
-  if (/^https:\/\//.test(href)) {
+  if (/^https:\/\//.test(slide.href)) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer sponsored" className={cls}>
+      <a href={slide.href} target="_blank" rel="noopener noreferrer sponsored" {...common}>
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={cls}>
+    <Link href={slide.href} {...common}>
       {children}
     </Link>
   );
 }
 
 /**
- * Fond défilant de la section d'accueil.
- * - fondu toutes les 5 s, image légèrement zoomée puis stabilisée ;
- * - pause au survol ou au focus de la légende, sur demande (bouton) et quand l'onglet est masqué ;
- * - aucun mouvement si le navigateur demande de réduire les animations (navigation par les points) ;
- * - les images suivantes ne sont chargées qu'au moment d'être affichées ;
- * - chaque diapositive porte la mention « Publicité » ou « Promotion ».
+ * Bannière d'affiches publicitaires de l'accueil (ordinateur) : images seules, sans texte.
+ * - fondu toutes les 5 s, chaque affiche entière est cliquable ;
+ * - pause au survol, au focus, sur demande et quand l'onglet est masqué ;
+ * - aucun mouvement si le navigateur demande de réduire les animations ;
+ * - les affiches suivantes ne sont chargées qu'au moment d'être affichées.
+ * Les affiches d'annonceurs (format 1920 × 720) remplissent la bannière ; à défaut, les photos
+ * de produits en promotion sont affichées entières sur fond blanc.
  */
 export function HeroBackdrop({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
@@ -51,7 +55,7 @@ export function HeroBackdrop({ slides }: { slides: HeroSlide[] }) {
   const go = (i: number) => {
     const next = (i + slides.length) % slides.length;
     setIndex(next);
-    // Charge la diapositive affichée et précharge la suivante.
+    // Charge l'affiche montrée et précharge la suivante.
     setMounted((m) => (m.has(next) && m.has((next + 1) % slides.length) ? m : new Set([...m, next, (next + 1) % slides.length])));
   };
 
@@ -66,86 +70,74 @@ export function HeroBackdrop({ slides }: { slides: HeroSlide[] }) {
   }, [autoplay, index]);
 
   if (!slides.length) return null;
-  const current = slides[index];
-  const fade = reducedMotion ? '' : 'transition-[opacity,transform] duration-[1200ms] ease-out';
+  const fade = reducedMotion ? '' : 'transition-opacity duration-700 ease-out';
+  const control = 'glass-dark inline-flex size-11 items-center justify-center rounded-full text-white transition-opacity hover:bg-navy/80';
 
   return (
-    <>
-      <div className="absolute inset-0 -z-20" aria-hidden>
-        {slides.map((s, i) =>
-          mounted.has(i) ? (
-            <picture key={s.id}>
-              <source media="(max-width: 767px)" srcSet={s.mobileImage} />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={s.image}
-                alt=""
-                decoding="async"
-                fetchPriority={i === 0 ? 'high' : 'low'}
-                className={`absolute inset-0 size-full object-cover ${fade} ${i === index ? 'scale-100 opacity-100' : 'scale-105 opacity-0'}`}
-              />
-            </picture>
-          ) : null,
-        )}
-      </div>
-      {/* Voile pour garder le texte lisible quelle que soit l'image. */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-navy/70 via-navy/50 to-navy/85" aria-hidden />
+    <div
+      role="region"
+      aria-roledescription="carrousel"
+      aria-label="Publicités"
+      className="group relative aspect-[8/3] overflow-hidden rounded-[32px] bg-navy shadow-[0_24px_60px_-30px_rgb(15_23_42/.45)]"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={() => setHovered(false)}
+    >
+      {slides.map((s, i) =>
+        mounted.has(i) ? (
+          <PosterLink
+            key={s.id}
+            slide={s}
+            active={i === index}
+            className={`absolute inset-0 block ${s.kind === 'Promotion' ? 'bg-white' : ''} ${fade} ${i === index ? 'z-[1] opacity-100' : 'pointer-events-none opacity-0'}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={s.image}
+              alt=""
+              decoding="async"
+              fetchPriority={i === 0 ? 'high' : 'low'}
+              className={`absolute inset-0 size-full ${s.kind === 'Promotion' ? 'object-contain py-6' : 'object-cover'}`}
+            />
+          </PosterLink>
+        ) : null,
+      )}
 
-      <div
-        className="absolute inset-x-0 bottom-5 z-10 sm:bottom-8"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setHovered(true)}
-        onBlur={() => setHovered(false)}
-      >
-        <div className="container-page flex items-end justify-between gap-3">
-          <div className="glass-dark max-w-md rounded-3xl px-5 py-4 text-left" aria-live={autoplay ? 'off' : 'polite'}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
-              {current.kind}
-              {current.source ? ` · ${current.source}` : ''}
-            </p>
-            <p className="mt-1 text-base font-semibold leading-snug text-white sm:text-lg">{current.title}</p>
-            {current.subtitle && <p className="mt-0.5 text-sm text-white/80">{current.subtitle}</p>}
-            {current.href && (
-              <SlideLink href={current.href}>
-                {current.kind === 'Publicité' ? 'Découvrir' : 'Voir l’offre'} <ArrowRight className="size-4" aria-hidden />
-              </SlideLink>
-            )}
-          </div>
-
-          {multiple && (
-            <div className="glass-dark flex shrink-0 items-center gap-1 rounded-full p-1">
+      {multiple && (
+        <>
+          <button type="button" onClick={() => go(index - 1)} aria-label="Affiche précédente" className={`${control} absolute left-4 top-1/2 z-10 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+            <ChevronLeft className="size-5" aria-hidden />
+          </button>
+          <button type="button" onClick={() => go(index + 1)} aria-label="Affiche suivante" className={`${control} absolute right-4 top-1/2 z-10 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+            <ChevronRight className="size-5" aria-hidden />
+          </button>
+          <div className="glass-dark absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-full p-1">
+            <button
+              type="button"
+              onClick={() => setUserPaused((p) => !p)}
+              aria-label={userPaused || reducedMotion ? 'Lancer le défilement' : 'Mettre en pause'}
+              aria-pressed={userPaused}
+              disabled={reducedMotion}
+              className="inline-flex size-9 items-center justify-center rounded-full text-white hover:bg-white/10 disabled:opacity-50"
+            >
+              {userPaused || reducedMotion ? <Play className="size-3.5" aria-hidden /> : <Pause className="size-3.5" aria-hidden />}
+            </button>
+            {slides.map((s, i) => (
               <button
+                key={s.id}
                 type="button"
-                onClick={() => setUserPaused((p) => !p)}
-                aria-label={userPaused || reducedMotion ? 'Lancer le défilement' : 'Mettre en pause'}
-                aria-pressed={userPaused}
-                disabled={reducedMotion}
-                className="inline-flex size-11 items-center justify-center rounded-full text-white hover:bg-white/10 disabled:opacity-50"
+                onClick={() => go(i)}
+                aria-label={`Affiche ${i + 1} sur ${slides.length}`}
+                aria-current={i === index ? 'true' : undefined}
+                className="group/dot inline-flex size-9 items-center justify-center"
               >
-                {userPaused || reducedMotion ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
+                <span className={`block h-1.5 rounded-full transition-all ${i === index ? 'w-6 bg-white' : 'w-1.5 bg-white/50 group-hover/dot:bg-white/80'}`} />
               </button>
-              <div className="hidden items-center sm:flex">
-                {slides.map((s, i) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => go(i)}
-                    aria-label={`${s.kind} ${i + 1} sur ${slides.length}`}
-                    aria-current={i === index ? 'true' : undefined}
-                    className="group inline-flex size-11 items-center justify-center"
-                  >
-                    <span className={`block h-1.5 rounded-full transition-all ${i === index ? 'w-6 bg-white' : 'w-1.5 bg-white/50 group-hover:bg-white/80'}`} />
-                  </button>
-                ))}
-              </div>
-              <span className="px-2 text-xs tabular-nums text-white/80 sm:hidden" aria-hidden>
-                {index + 1}/{slides.length}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }

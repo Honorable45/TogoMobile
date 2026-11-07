@@ -6,6 +6,7 @@ import { AuthUser, CurrentUser, Public } from '../common/auth.decorators';
 import {
   ChangePasswordDto,
   ForgotPasswordDto,
+  GoogleLoginDto,
   LoginDto,
   RegisterDto,
   ResetPasswordDto,
@@ -37,6 +38,17 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = await this.auth.validateCredentials(dto.identifier, dto.password);
+    await this.sessions.create(user.id, req.headers['user-agent'], res);
+    return this.auth.me(user.id);
+  }
+
+  /** Connexion (ou création de compte) avec Google : le jeton signé par Google est vérifié côté serveur. */
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post('google')
+  async google(@Body() dto: GoogleLoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const user = await this.auth.loginWithGoogle(dto.credential);
     await this.sessions.create(user.id, req.headers['user-agent'], res);
     return this.auth.me(user.id);
   }

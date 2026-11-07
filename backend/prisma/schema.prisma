@@ -31,6 +31,8 @@ model User {
   email            String?    @unique // toujours en minuscules
   phone            String?    @unique // format E.164, ex. +22890123456
   passwordHash     String
+  /// Identifiant Google (« sub ») quand le compte est lié à la connexion Google.
+  googleId         String?    @unique
   role             Role       @default(CUSTOMER)
   status           UserStatus @default(ACTIVE)
   isDemo           Boolean    @default(false)
