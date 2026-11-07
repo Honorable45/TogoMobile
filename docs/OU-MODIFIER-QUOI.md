@@ -41,6 +41,7 @@ Chaque section a son propre fichier dans `components/home/sections/` :
 | Carte produit (photo, badge, Commander, prix) | `components/product/product-card.tsx` |
 | Grande tuile « gamme » (Promo du jour, Nouveautés) | `components/home/lineup-tile.tsx` |
 | Format des prix, des dates, de la fin des promos | `lib/format.ts` |
+| Un bloc de la fiche produit (prix, lignes de confiance, état, autres offres, questions fréquentes, barre Commander) | `components/product/detail/` (un fichier par bloc) |
 
 ### En-tête et pages
 
