@@ -70,7 +70,7 @@ export function CardOrderButton({ productId, title }: { productId: string; title
       }}
       disabled={loading}
       aria-label={`Commander ${title} sur WhatsApp`}
-      className="glass-dark relative z-10 inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-white transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98] disabled:opacity-70"
+      className="glass-dark relative z-10 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium text-white sm:h-11 sm:px-4 sm:text-[13px] transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98] disabled:opacity-70"
     >
       <WhatsAppIcon className="size-4" />
       {loading ? '…' : 'Commander'}

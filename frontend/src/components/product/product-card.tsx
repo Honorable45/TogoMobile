@@ -60,7 +60,7 @@ export function ProductCard({ product, priority }: { product: Card; priority?: b
   const unavailable = p.availability !== 'AVAILABLE';
   const details = [p.brand.name, storageLabel(p.storageGb), p.ramGb ? `${p.ramGb} Go RAM` : null].filter(Boolean).join(' · ');
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-surface transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:-translate-y-0.5 hover:shadow-card">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:-translate-y-0.5 hover:shadow-card">
       <div className="relative aspect-square overflow-hidden bg-paper-2">
         <ProductImage
           src={p.image?.thumbUrl}
@@ -83,7 +83,7 @@ export function ProductCard({ product, priority }: { product: Card; priority?: b
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3.5">
-        <h3 className="line-clamp-2 text-[14.5px] font-medium leading-snug text-ink">
+        <h3 className="line-clamp-2 min-h-[2.75em] text-[14.5px] font-medium leading-snug text-ink">
           <Link href={`/produits/${p.slug}`} className="after:absolute after:inset-0 after:content-['']">
             {p.title}
           </Link>
@@ -127,7 +127,7 @@ export function ProductRow({ products, label = 'Produits' }: { products: Card[];
   return (
     <ScrollRow label={label} inset>
       {products.map((p) => (
-        <div key={p.id} className="w-[46%] shrink-0 sm:w-[38%] md:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
+        <div key={p.id} className="w-[44vw] max-w-[240px] shrink-0 sm:w-[38%] sm:max-w-none md:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
           <ProductCard product={p} />
         </div>
       ))}

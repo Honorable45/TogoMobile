@@ -144,7 +144,7 @@ export default async function HomePage() {
         <SectionHead id="pourquoi" title={`Pourquoi acheter sur ${brand.name}.`} href="/comment-ca-marche" link="Comment ça marche" />
         <ScrollRow label={`Pourquoi acheter sur ${brand.name}`}>
           {REASONS.map(({ Icon, tone, eyebrow, title, text }) => (
-            <article key={eyebrow} className="flex h-[340px] w-[78vw] max-w-[340px] shrink-0 flex-col rounded-[28px] bg-surface p-7 md:h-[440px] md:p-8 transition-transform duration-300 hover:scale-[1.01] sm:w-[340px]">
+            <article key={eyebrow} className="flex h-[340px] w-[78vw] max-w-[320px] shrink-0 flex-col rounded-[28px] bg-surface p-7 md:h-[440px] md:p-8 transition-transform duration-300 hover:scale-[1.01] sm:w-[320px]">
               <p className="text-[13px] font-semibold text-ink-2">{eyebrow}</p>
               <h3 className="display mt-2 text-[26px]">{title}</h3>
               <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{text}</p>
@@ -174,7 +174,7 @@ export default async function HomePage() {
           <SectionHead id="boutiques" title="Des boutiques validées." href="/boutiques" link="Toutes les boutiques" />
           <ScrollRow label="Boutiques">
             {data.shops.map((s) => (
-              <div key={s.id} className="w-[85vw] max-w-[380px] shrink-0">
+              <div key={s.id} className="w-[78vw] max-w-[320px] shrink-0 sm:w-[320px]">
                 <ShopCard shop={s} />
               </div>
             ))}
@@ -201,7 +201,7 @@ export default async function HomePage() {
               </div>
               <ScrollRow label={`Téléphones ${b.name}`}>
                 {pg.items.map((p) => (
-                  <div key={p.id} className="w-[46vw] max-w-[260px] shrink-0 sm:w-[260px]">
+                  <div key={p.id} className="w-[44vw] max-w-[240px] shrink-0 sm:w-[240px]">
                     <ProductCardView product={p} />
                   </div>
                 ))}

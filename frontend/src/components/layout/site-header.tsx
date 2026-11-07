@@ -207,7 +207,7 @@ export function SiteHeader() {
       active ? 'glass-dark text-white' : 'text-ink-2 hover:glass-light'
     }`;
   const pill =
-    'glass-dark inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-white transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98]';
+    'glass-dark inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium md:h-11 md:gap-2 md:px-4 md:text-sm text-white transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98]';
 
   return (
     <>
@@ -224,11 +224,11 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center gap-1.5 md:ml-0">
             {user?.role === 'SELLER' ? (
               <Link href="/vendeur" className={`${pill} md:hidden`}>
-                <LayoutDashboard className="size-[18px]" aria-hidden /> Ma boutique
+                <LayoutDashboard className="size-4 md:size-[18px]" aria-hidden /> Ma boutique
               </Link>
             ) : user?.role !== 'ADMIN' ? (
               <Link href="/devenir-vendeur" aria-current={sellerActive ? 'page' : undefined} className={pill}>
-                <Store className="size-[18px]" aria-hidden /> Devenir vendeur
+                <Store className="size-4 md:size-[18px]" aria-hidden /> Devenir vendeur
               </Link>
             ) : null}
             {brand.whatsapp && (
