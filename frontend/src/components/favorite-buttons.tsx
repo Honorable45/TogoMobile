@@ -61,7 +61,7 @@ export function FollowShopButton({ shopId, name }: { shopId: string; name: strin
       aria-label={active ? `Ne plus suivre ${name}` : `Suivre ${name}`}
       onClick={() => (user ? void toggleShop(shopId) : router.push(loginHref()))}
       className={`inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-[0.9375rem] font-medium transition-[transform,background-color] duration-200 active:scale-[.98] ${
-        active ? 'bg-white text-navy' : 'glass text-white hover:bg-white/20'
+        active ? 'bg-canvas text-navy' : 'border border-line-2 bg-surface text-ink hover:border-ink'
       }`}
     >
       <Heart className={`size-[18px] ${active ? 'fill-promo-600 text-promo-600' : ''}`} aria-hidden />

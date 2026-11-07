@@ -25,16 +25,16 @@ export default async function ShopsPage({ searchParams }: { searchParams: SP }) 
   return (
     <>
     <PageBanner eyebrow="Vendeurs validés" title="Boutiques" subtitle="Chaque boutique est examinée par l’équipe avant d’apparaître ici.">
-      <form className="glass flex max-w-2xl flex-wrap gap-2 rounded-3xl p-1.5 sm:flex-nowrap sm:rounded-full" action="/boutiques">
+      <form className="flex max-w-2xl bg-canvas flex-wrap gap-2 rounded-3xl p-1.5 sm:flex-nowrap sm:rounded-full" action="/boutiques">
         <label htmlFor="shop-q" className="sr-only">Rechercher une boutique</label>
-        <input id="shop-q" name="q" defaultValue={sp.q} placeholder="Nom de la boutique" className="h-11 min-w-0 flex-1 rounded-full bg-white/10 px-4 text-[15px] text-white placeholder:text-white/60 focus:bg-white/15 focus:outline-none" />
+        <input id="shop-q" name="q" defaultValue={sp.q} placeholder="Nom de la boutique" className="h-11 min-w-0 flex-1 rounded-full bg-transparent px-4 text-[15px] text-ink placeholder:text-faint focus:outline-none" />
         <label htmlFor="shop-sort" className="sr-only">Trier</label>
-        <select id="shop-sort" name="sort" defaultValue={sort} className="h-11 rounded-full bg-white/10 px-3 text-sm text-white [&>option]:text-ink">
+        <select id="shop-sort" name="sort" defaultValue={sort} className="h-11 rounded-full bg-surface px-3 text-sm text-ink">
           <option value="recent">Récemment validées</option>
           <option value="rating">Mieux notées</option>
           <option value="name">Nom (A–Z)</option>
         </select>
-        <button className="glass h-11 rounded-full px-5 text-sm font-medium text-white transition-[transform,background-color] hover:bg-white/25 active:scale-[.98]">Rechercher</button>
+        <button className="h-11 rounded-full bg-navy px-5 text-sm font-medium text-white transition-[transform,background-color] hover:bg-navy-2 active:scale-[.98]">Rechercher</button>
       </form>
     </PageBanner>
     <div className="container-page py-10 md:py-14">

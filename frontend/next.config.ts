@@ -11,6 +11,8 @@ const ADMIN_URL = (process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001')
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  /** Test sur téléphone en Wi-Fi : DEV_ORIGINS="192.168.1.20" autorise le rechargement à chaud depuis cette adresse. */
+  allowedDevOrigins: process.env.DEV_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean),
   async redirects() {
     return [
       { source: '/admin', destination: `${ADMIN_URL}/`, permanent: false },

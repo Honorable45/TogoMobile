@@ -21,12 +21,12 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageBanner eyebrow="Toutes les boutiques" title="Catalogue" subtitle="Neufs, reconditionnés et d’occasion, au même endroit.">
-        <form action="/catalogue" role="search" className="glass flex max-w-2xl gap-2 rounded-full p-1.5">
+        <form action="/catalogue" role="search" className="flex max-w-2xl gap-2 rounded-full bg-canvas p-1.5">
           <label htmlFor="catalog-search" className="sr-only">
             Rechercher un téléphone
           </label>
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-white/70" aria-hidden />
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-muted" aria-hidden />
             <input
               id="catalog-search"
               name="q"
@@ -34,10 +34,10 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
               defaultValue={q}
               enterKeyHint="search"
               placeholder="iPhone 13, Galaxy A15…"
-              className="h-11 w-full rounded-full bg-white/10 pl-11 pr-3 text-[15px] text-white placeholder:text-white/60 focus:bg-white/15 focus:outline-none"
+              className="h-11 w-full rounded-full bg-transparent pl-11 pr-3 text-[15px] text-ink placeholder:text-faint focus:outline-none"
             />
           </div>
-          <button type="submit" className="glass h-11 rounded-full px-5 text-sm font-medium text-white transition-[transform,background-color] hover:bg-white/25 active:scale-[.98]">
+          <button type="submit" className="h-11 rounded-full bg-navy px-5 text-sm font-medium text-white transition-[transform,background-color] hover:bg-navy-2 active:scale-[.98]">
             Rechercher
           </button>
         </form>

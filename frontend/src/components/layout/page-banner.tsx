@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
-import { brand } from '@/config/brand';
 import { BackButton } from './back-button';
 
 /**
- * Bandeau des pages intérieures : aplat bleu nuit (photo facultative sous un voile à 70 %),
- * bouton « Retour », titre serif, phrase courte et contenu dans des panneaux de verre.
- * Le haut du bandeau passe sous l'en-tête flottant.
+ * En-tête des pages intérieures, façon fiche produit Apple : fond blanc, grand titre noir,
+ * phrase courte en gris. Le haut passe sous l'en-tête flottant.
  */
 export function PageBanner({
   title,
@@ -13,7 +11,6 @@ export function PageBanner({
   eyebrow,
   back = '/',
   backLabel = 'Retour',
-  image = brand.bannerImage,
   children,
   aside,
   compact = false,
@@ -23,6 +20,7 @@ export function PageBanner({
   eyebrow?: ReactNode;
   back?: string | false;
   backLabel?: string;
+  /** Conservé pour compatibilité : le bandeau clair n'affiche plus de photo. */
   image?: string;
   children?: ReactNode;
   aside?: ReactNode;
@@ -30,21 +28,14 @@ export function PageBanner({
   compact?: boolean;
 }) {
   return (
-    <section className="relative isolate overflow-hidden bg-navy text-white">
-      {image && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="" className="absolute inset-0 -z-20 size-full object-cover" />
-          <div className="absolute inset-0 -z-10 bg-navy/70" aria-hidden />
-        </>
-      )}
-      <div className={`container-page ${compact ? 'pb-6 pt-[136px] md:pb-8 md:pt-[100px]' : 'pb-10 pt-[148px] md:pb-14 md:pt-[116px]'}`}>
-        {back !== false && <BackButton fallback={back} label={backLabel} />}
-        <div className={`${compact ? 'mt-4' : 'mt-6'} flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between`}>
+    <section className="bg-surface text-ink">
+      <div className={`container-page ${compact ? 'pb-6 pt-[156px] md:pb-8 md:pt-[104px]' : 'pb-10 pt-[164px] md:pb-14 md:pt-[120px]'}`}>
+        {back !== false && <BackButton fallback={back} label={backLabel} tone="light" />}
+        <div className={`${back !== false ? (compact ? 'mt-4' : 'mt-6') : ''} flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between`}>
           <div className="min-w-0 max-w-3xl">
-            {eyebrow && <p className="eyebrow mb-3 text-white/70">{eyebrow}</p>}
-            <h1 className={`display ${compact ? 'text-[32px] sm:text-[40px] lg:text-[44px]' : 'text-[40px] sm:text-[48px] lg:text-[56px]'}`}>{title}</h1>
-            {subtitle && <div className="mt-3 max-w-2xl text-[15px] text-white/80">{subtitle}</div>}
+            {eyebrow && <p className="eyebrow mb-2 text-promo-700">{eyebrow}</p>}
+            <h1 className={`display ${compact ? 'text-[32px] sm:text-[40px] lg:text-[48px]' : 'text-[44px] sm:text-[56px] lg:text-[72px]'}`}>{title}</h1>
+            {subtitle && <div className="mt-3 max-w-2xl text-[17px] leading-snug text-muted md:text-[19px]">{subtitle}</div>}
           </div>
           {aside && <div className="shrink-0">{aside}</div>}
         </div>
@@ -54,7 +45,7 @@ export function PageBanner({
   );
 }
 
-/** Panneau de verre pour le contenu des bandeaux. */
+/** Encadré d'information dans un en-tête de page. */
 export function GlassPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`glass rounded-3xl p-5 ${className}`}>{children}</div>;
+  return <div className={`rounded-3xl bg-canvas p-5 ${className}`}>{children}</div>;
 }

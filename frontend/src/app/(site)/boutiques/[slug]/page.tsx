@@ -75,7 +75,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
               {active && <span className="num">{plural(shop.productCount, 'téléphone disponible', 'téléphones disponibles')}</span>}
               {shop.isDemo && <DemoBadge />}
             </span>
-            {shop.description && <span className="max-w-2xl text-white/80">{shop.description}</span>}
+            {shop.description && <span className="max-w-2xl text-muted">{shop.description}</span>}
           </span>
         }
         aside={
@@ -89,19 +89,19 @@ export default async function ShopPage({ params, searchParams }: Props) {
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <GlassPanel className="space-y-1.5 text-sm">
-            <p className="eyebrow text-white/60">Confiance</p>
+            <p className="eyebrow">Confiance</p>
             {shop.validatedAt && (
-              <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-promo-100" aria-hidden /> Boutique validée par {brand.name}</p>
+              <p className="flex items-center gap-2"><ShieldCheck className="size-4 text-promo-600" aria-hidden /> Boutique validée par {brand.name}</p>
             )}
             {shop.identityVerified ? (
-              <p className="flex items-center gap-2"><BadgeCheck className="size-4 text-promo-100" aria-hidden /> Identité du vendeur vérifiée</p>
+              <p className="flex items-center gap-2"><BadgeCheck className="size-4 text-promo-600" aria-hidden /> Identité du vendeur vérifiée</p>
             ) : (
-              <p className="text-white/70">Identité non vérifiée par la plateforme</p>
+              <p className="text-muted">Identité non vérifiée par la plateforme</p>
             )}
           </GlassPanel>
           {(shop.openingHours || shop.phone || shop.address) && (
             <GlassPanel className="space-y-1.5 text-sm">
-              <p className="eyebrow text-white/60">Coordonnées</p>
+              <p className="eyebrow">Coordonnées</p>
               {shop.openingHours && <p className="flex items-center gap-2"><Clock className="size-4" aria-hidden />{shop.openingHours}</p>}
               {shop.phone && <a href={`tel:${shop.phone}`} className="flex items-center gap-2 hover:underline"><Phone className="size-4" aria-hidden /><span className="num">{shop.phone}</span></a>}
               {shop.address && <p className="flex items-center gap-2"><MapPin className="size-4" aria-hidden />{shop.address}</p>}
@@ -109,10 +109,10 @@ export default async function ShopPage({ params, searchParams }: Props) {
           )}
           {socials.length > 0 && (
             <GlassPanel className="space-y-2 text-sm">
-              <p className="eyebrow text-white/60">Réseaux</p>
+              <p className="eyebrow">Réseaux</p>
               <div className="flex flex-wrap gap-2">
                 {socials.map(({ key, label, Icon }) => (
-                  <a key={key} href={shop.socialLinks[key]} target="_blank" rel="noopener noreferrer nofollow" aria-label={`${shop.name} sur ${label}`} className="glass inline-flex size-11 items-center justify-center rounded-full">
+                  <a key={key} href={shop.socialLinks[key]} target="_blank" rel="noopener noreferrer nofollow" aria-label={`${shop.name} sur ${label}`} className="inline-flex size-11 items-center justify-center rounded-full bg-surface text-ink">
                     <Icon className="size-[18px]" />
                   </a>
                 ))}

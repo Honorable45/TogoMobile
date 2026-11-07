@@ -22,7 +22,7 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
       eyebrow="24 h seulement"
       title="Promo du jour"
       subtitle="Chaque offre dure 24 heures au maximum ; celles qui se terminent bientôt apparaissent en premier. Prix barré : plus bas prix des 30 derniers jours."
-      aside={<p className="glass num rounded-full px-4 py-2 text-sm">{data.total} en cours</p>}
+      aside={<p className="num rounded-full bg-canvas px-4 py-2 text-sm font-medium text-ink">{data.total} en cours</p>}
     />
     <div className="container-page py-10 md:py-14">
       {data.items.length ? (

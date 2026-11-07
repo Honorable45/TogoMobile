@@ -100,7 +100,7 @@ export default async function ProductPage({ params }: Props) {
       back="/catalogue"
       eyebrow={
         <span className="flex flex-wrap items-center gap-x-2">
-          <Link href={`/catalogue?brand=${p.brand.slug}`} className="hover:text-white hover:underline">{p.brand.name}</Link>
+          <Link href={`/catalogue?brand=${p.brand.slug}`} className="hover:underline">{p.brand.name}</Link>
           <span aria-hidden>·</span>
           <span>{CONDITION_LABELS[p.condition]}</span>
         </span>
