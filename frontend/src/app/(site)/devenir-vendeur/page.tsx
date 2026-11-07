@@ -36,7 +36,7 @@ export default function BecomeSellerPage() {
             </li>
           ))}
         </ol>
-        <p className="mt-10 text-xs leading-relaxed text-muted">
+        <p className="mt-10 text-[14px] leading-relaxed text-ink-2">
           En publiant sur {brand.name}, vous vous engagez à proposer des appareils dont vous avez le droit de disposer, à décrire honnêtement leur état et à afficher des prix réels. Voir la politique de modération.
         </p>
       </div>

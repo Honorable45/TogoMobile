@@ -85,7 +85,8 @@
   }
   /* Mobile : place réservée sous le contenu pour la barre d'onglets fixée en bas de l'écran. */
   @media (width < 48rem) {
-    body:has(#bottom-nav) {
+    body:has(#bottom-nav),
+    body:has(#order-bar) {
       padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
     }
   }
@@ -192,7 +193,8 @@
 
 /* Boutons d'action sur fond clair ou sur photo */
 @utility glass-dark {
-  background: rgb(10 11 13 / 0.8);
+  /* Assez opaque pour ne jamais paraître « grisé » (désactivé) sur fond clair. */
+  background: rgb(10 11 13 / 0.92);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgb(255 255 255 / 0.22);

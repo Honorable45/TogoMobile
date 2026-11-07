@@ -19,6 +19,7 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
   return (
     <>
     <PageBanner
+      back={false}
       eyebrow="24 h seulement"
       title="Promo du jour"
       subtitle="Chaque offre dure 24 heures au maximum ; celles qui se terminent bientôt apparaissent en premier. Prix barré : plus bas prix des 30 derniers jours."

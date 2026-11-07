@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { BadgeCheck, CalendarClock, ChevronRight, MapPin, PackageCheck, ShieldAlert, ShieldCheck, Sparkles, Store, Wrench } from 'lucide-react';
 import { FavoriteProductButton } from '@/components/favorite-buttons';
 import { Gallery } from '@/components/product/gallery';
-import { ProductRow } from '@/components/product/product-card';
+import { ProductRow } from '@/components/home/endless-row';
 import { ViewTracker, WhatsAppOrderButton } from '@/components/product/whatsapp-button';
 import { ReportButton } from '@/components/report-button';
 import { ReviewsSection } from '@/components/reviews';
@@ -168,7 +168,8 @@ export default async function ProductPage({ params }: Props) {
               <FavoriteProductButton productId={p.id} title={p.title} variant="full" />
             </div>
           )}
-          <p className="text-xs leading-relaxed text-muted">
+          <p className="flex gap-2 rounded-2xl bg-canvas p-3.5 text-[14px] leading-snug text-ink-2">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
             La commande et le paiement se font directement avec le vendeur. Confirmez avec lui le prix, l’état de l’appareil et la garantie avant de payer.
           </p>
 
@@ -251,7 +252,7 @@ export default async function ProductPage({ params }: Props) {
       {similar.length > 0 && (
         <section className="mt-16 md:mt-24">
           <h2 className="display mb-6 text-[26px] sm:text-[36px]">Autres {p.brand.name} disponibles</h2>
-          <ProductRow products={similar} label={`Autres ${p.brand.name} disponibles`} />
+          <ProductRow products={similar} label={`Autres ${p.brand.name} disponibles`} query={`brand=${p.brand.slug}&available=true`} exclude={p.id} />
         </section>
       )}
 
@@ -260,7 +261,7 @@ export default async function ProductPage({ params }: Props) {
       </div>
 
       {p.availability !== 'WITHDRAWN' && (
-        <div className="glass-light fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 rounded-[28px] py-2 pl-4 pr-2 sm:hidden">
+        <div id="order-bar" className="glass-light fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 rounded-[28px] py-2 pl-4 pr-2 sm:hidden">
           <div className="min-w-0">
             <p className="num text-base font-semibold leading-tight text-brand-600">{fcfa(p.currentPrice)}</p>
             {p.promotion && <p className="text-xs text-muted line-through">{fcfa(p.promotion.referencePrice)}</p>}
