@@ -16,6 +16,7 @@ export function PageBanner({
   image = brand.bannerImage,
   children,
   aside,
+  compact = false,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
@@ -25,6 +26,8 @@ export function PageBanner({
   image?: string;
   children?: ReactNode;
   aside?: ReactNode;
+  /** Bandeau réduit (fiches produit) : le contenu utile remonte au-dessus de la ligne de flottaison. */
+  compact?: boolean;
 }) {
   return (
     <section className="relative isolate overflow-hidden bg-navy text-white">
@@ -35,12 +38,12 @@ export function PageBanner({
           <div className="absolute inset-0 -z-10 bg-navy/70" aria-hidden />
         </>
       )}
-      <div className="container-page pb-10 pt-[148px] md:pb-14 md:pt-[116px]">
+      <div className={`container-page ${compact ? 'pb-6 pt-[136px] md:pb-8 md:pt-[100px]' : 'pb-10 pt-[148px] md:pb-14 md:pt-[116px]'}`}>
         {back !== false && <BackButton fallback={back} label={backLabel} />}
-        <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className={`${compact ? 'mt-4' : 'mt-6'} flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between`}>
           <div className="min-w-0 max-w-3xl">
             {eyebrow && <p className="eyebrow mb-3 text-white/70">{eyebrow}</p>}
-            <h1 className="display text-[40px] sm:text-[48px] lg:text-[56px]">{title}</h1>
+            <h1 className={`display ${compact ? 'text-[32px] sm:text-[40px] lg:text-[44px]' : 'text-[40px] sm:text-[48px] lg:text-[56px]'}`}>{title}</h1>
             {subtitle && <div className="mt-3 max-w-2xl text-[15px] text-white/80">{subtitle}</div>}
           </div>
           {aside && <div className="shrink-0">{aside}</div>}

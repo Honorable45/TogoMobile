@@ -1,16 +1,18 @@
-import { SearchX } from 'lucide-react';
+import { PackageX } from 'lucide-react';
 import { ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/misc';
 import { PageBanner } from '@/components/layout/page-banner';
+import { SimilarFromSlug } from '@/components/product/similar-from-slug';
 
 export default function ProductNotFound() {
   return (
     <>
-    <PageBanner title="Introuvable" />
+    <PageBanner title="Cette annonce est terminée" back="/catalogue" backLabel="Catalogue" />
     <div className="container-page py-12 md:py-16">
-      <EmptyState icon={<SearchX className="size-10" />} title="Cette annonce n’est plus disponible" action={<ButtonLink href="/catalogue">Voir le catalogue</ButtonLink>}>
-        Elle a peut-être été retirée par le vendeur, ou la boutique n’est plus active.
+      <EmptyState icon={<PackageX className="size-10" />} title="Ce téléphone n’est plus en vente" action={<ButtonLink href="/catalogue">Voir tout le catalogue</ButtonLink>}>
+        Il a peut-être déjà trouvé preneur, ou le vendeur a retiré son annonce. Voici des téléphones proches encore disponibles.
       </EmptyState>
+      <SimilarFromSlug />
     </div>
     </>
   );

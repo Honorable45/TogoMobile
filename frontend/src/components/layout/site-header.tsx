@@ -211,7 +211,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="glass-light fixed inset-x-3 top-3 z-40 rounded-[28px] md:rounded-full">
+      <header className="glass-header fixed inset-x-3 top-3 z-40 rounded-[28px] md:rounded-full">
         <div className="mx-auto flex h-[60px] max-w-[76rem] items-center gap-2 pl-4 pr-2 md:h-16 md:pl-5">
           <Logo />
           <nav aria-label="Navigation principale" className="mx-auto hidden items-center gap-1 md:flex">

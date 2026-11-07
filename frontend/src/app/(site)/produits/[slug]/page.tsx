@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { BadgeCheck, CalendarClock, ChevronRight, MapPin, PackageCheck, ShieldAlert, Store, Wrench } from 'lucide-react';
+import { BadgeCheck, CalendarClock, ChevronRight, MapPin, PackageCheck, ShieldAlert, ShieldCheck, Sparkles, Store, Wrench } from 'lucide-react';
 import { FavoriteProductButton } from '@/components/favorite-buttons';
 import { Gallery } from '@/components/product/gallery';
 import { ProductRow } from '@/components/product/product-card';
@@ -106,16 +106,16 @@ export default async function ProductPage({ params }: Props) {
         </span>
       }
       title={p.title}
+      compact
       subtitle={
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {p.ratingCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5"><Stars value={p.ratingAvg} size={13} /><span className="num">{p.ratingAvg.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} · {p.ratingCount} avis vérifiés</span></span>
-          ) : (
-            <span>Pas encore d’avis</span>
-          )}
-          <span className="font-mono text-[13px] text-white/70">Réf. {p.reference}</span>
-          {p.isDemo && <DemoBadge />}
-        </span>
+        p.ratingCount > 0 || p.isDemo ? (
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {p.ratingCount > 0 && (
+              <span className="inline-flex items-center gap-1.5"><Stars value={p.ratingAvg} size={13} /><span className="num">{p.ratingAvg.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} · {p.ratingCount} avis vérifiés</span></span>
+            )}
+            {p.isDemo && <DemoBadge />}
+          </span>
+        ) : undefined
       }
     />
     <div className="container-page py-8 md:py-12">
@@ -136,10 +136,26 @@ export default async function ProductPage({ params }: Props) {
                 <span className="text-muted">Prix barré : prix le plus bas pratiqué ces 30 derniers jours.</span>
               </p>
             ) : null}
-            <p className={`flex items-center gap-1.5 text-sm font-medium ${p.availability === 'AVAILABLE' ? 'text-ok' : 'text-warn'}`}>
-              <PackageCheck className="size-4" aria-hidden />
-              {AVAILABILITY_LABELS[p.availability]}
-            </p>
+            <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-sm">
+              <li className={`flex items-center gap-1.5 font-medium ${p.availability === 'AVAILABLE' ? 'text-ok' : 'text-warn'}`}>
+                <PackageCheck className="size-4" aria-hidden />
+                {AVAILABILITY_LABELS[p.availability]}
+              </li>
+              <li className="flex items-center gap-1.5 text-ink-2">
+                <Sparkles className="size-4 text-muted" aria-hidden />
+                {CONDITION_LABELS[p.condition]}
+              </li>
+              {p.warranty && (
+                <li className="flex items-center gap-1.5 text-ink-2">
+                  <ShieldCheck className="size-4 text-muted" aria-hidden />
+                  Garantie {p.warranty}
+                </li>
+              )}
+              <li className="flex items-center gap-1.5 text-ink-2">
+                <MapPin className="size-4 text-muted" aria-hidden />
+                {p.shop.city}
+              </li>
+            </ul>
           </div>
 
           {p.availability === 'WITHDRAWN' ? (
@@ -165,6 +181,7 @@ export default async function ProductPage({ params }: Props) {
             <Row label="Garantie" value={p.warranty} />
             <Row label="Accessoires inclus" value={p.accessories} />
             {p.publishedAt && <Row label="Annonce publiée le" value={formatDate(p.publishedAt)} />}
+            <Row label="Référence" value={p.reference} />
           </dl>
 
           <Link href={`/boutiques/${p.shop.slug}`} className="lift flex items-center gap-3 rounded-card border border-line bg-surface p-4 hover:shadow-card">
