@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * Boutons en pilule. Hiérarchie :
- * - primary  : verre sombre (action principale sur fond clair)
+ * - primary  : noir plein (action principale sur fond clair ; jamais grisé, pour ne pas sembler désactivé)
  * - glass    : verre clair (sur photo ou aplat bleu nuit)
  * - whatsapp : vert plein (canal de contact)
  * - outline  : verre clair ; secondary : accent pâle ; ghost ; danger
@@ -15,7 +15,7 @@ export type Size = 'sm' | 'md' | 'lg';
 const base =
   'inline-flex items-center justify-center gap-2 rounded-full font-medium select-none whitespace-nowrap transition-[transform,background-color,box-shadow,color] duration-200 ease-[cubic-bezier(0.2,0.7,0.2,1)] active:scale-[.98] disabled:opacity-55 disabled:pointer-events-none';
 const variants: Record<Variant, string> = {
-  primary: 'glass-dark text-white hover:-translate-y-0.5 hover:bg-navy',
+  primary: 'bg-navy text-white shadow-[0_10px_26px_-12px_rgb(10_11_13/0.6)] hover:-translate-y-0.5 hover:bg-black',
   glass: 'glass text-white hover:-translate-y-0.5 hover:bg-white/20',
   whatsapp: 'bg-whatsapp text-white hover:-translate-y-0.5 hover:bg-whatsapp-hover',
   secondary: 'bg-brand-50 text-brand-700 hover:bg-brand-100',

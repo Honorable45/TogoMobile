@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api-client';
 import type { Page, ProductCard } from '@/lib/types';
-import { ProductRow } from './product-card';
+import { ProductRow } from '../home/endless-row';
 
 /**
  * Déduit une recherche de l'adresse d'une annonce disparue :

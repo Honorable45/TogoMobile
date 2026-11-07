@@ -5,7 +5,7 @@ import { FollowShopButton } from '@/components/favorite-buttons';
 import { CatalogBrowser, type RawParams } from '@/components/product/catalog-browser';
 import { ReportButton } from '@/components/report-button';
 import { ReviewsSection } from '@/components/reviews';
-import { ProductRow } from '@/components/product/product-card';
+import { ProductRow } from '@/components/home/endless-row';
 import { ShopLogo } from '@/components/shop/shop-card';
 import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon, YouTubeIcon } from '@/components/ui/brand-icons';
 import { Alert, DemoBadge, Stars } from '@/components/ui/misc';
@@ -131,7 +131,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
         {promos && promos.items.length > 0 && (
           <section aria-labelledby="promos-boutique">
             <h2 id="promos-boutique" className="display mb-6 text-[26px] sm:text-[36px]">Promotions en cours.</h2>
-            <ProductRow products={promos.items} label="Promotions en cours" />
+            <ProductRow products={promos.items} label="Promotions en cours" query={`shop=${encodeURIComponent(slug)}&promo=true`} />
           </section>
         )}
         {active && (

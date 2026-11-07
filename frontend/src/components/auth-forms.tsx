@@ -124,6 +124,13 @@ export function RegisterForm() {
       setErrors({ terms: 'Vous devez accepter les conditions d’utilisation.' });
       return;
     }
+    // Un seul champ « e-mail ou téléphone », comme à la connexion : l'arobase fait la différence.
+    const contact = String(fd.get('contact') ?? '').trim();
+    if (!contact) {
+      setErrors({ contact: 'Indiquez votre e-mail ou votre numéro de téléphone.' });
+      return;
+    }
+    const isEmail = contact.includes('@');
     setLoading(true);
     setErrors({});
     setError(undefined);
@@ -131,14 +138,17 @@ export function RegisterForm() {
       const me = await api<Me>('/auth/register', {
         body: {
           name: fd.get('name'),
-          email: fd.get('email') || undefined,
-          phone: fd.get('phone') || undefined,
+          email: isEmail ? contact : undefined,
+          phone: isEmail ? undefined : contact,
           password: fd.get('password'),
         },
       });
       window.location.assign(redirectAfterAuth(me, next));
     } catch (err) {
-      if (err instanceof ClientApiError) setErrors(err.errors);
+      if (err instanceof ClientApiError) {
+        const { email, phone, ...rest } = err.errors;
+        setErrors(email || phone ? { ...rest, contact: email || phone } : rest);
+      }
       setError(errorMessage(err));
       setLoading(false);
     }
@@ -161,11 +171,12 @@ export function RegisterForm() {
         <Field label="Nom complet" error={errors.name}>
           {(p) => <Input {...p} name="name" autoComplete="name" required minLength={2} maxLength={80} />}
         </Field>
-        <Field label="Adresse e-mail" error={errors.email} optional hint="Nécessaire pour récupérer votre compte en cas d’oubli du mot de passe.">
-          {(p) => <Input {...p} name="email" type="email" autoComplete="email" inputMode="email" />}
-        </Field>
-        <Field label="Numéro de téléphone" error={errors.phone} optional hint="Format togolais (90 12 34 56) ou international (+228…).">
-          {(p) => <Input {...p} name="phone" type="tel" autoComplete="tel" inputMode="tel" />}
+        <Field
+          label="E-mail ou numéro de téléphone"
+          error={errors.contact}
+          hint="Numéro togolais (90 12 34 56) ou international (+228…). Avec un e-mail, vous pourrez récupérer votre compte si vous oubliez le mot de passe."
+        >
+          {(p) => <Input {...p} name="contact" autoComplete="username" required placeholder="vous@exemple.com ou 90 12 34 56" />}
         </Field>
         <Field label="Mot de passe" error={errors.password} hint="8 caractères minimum, dont une lettre et un chiffre.">
           {(p) => <PasswordInput {...p} name="password" autoComplete="new-password" required minLength={8} />}

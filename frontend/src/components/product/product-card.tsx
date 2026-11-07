@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { BadgeCheck, Smartphone } from 'lucide-react';
-import { CONDITION_LABELS, formatDate, storageLabel } from '@/lib/format';
+import { CONDITION_LABELS, promoEnds, storageLabel } from '@/lib/format';
 import type { ProductCard as Card } from '@/lib/types';
 import { FavoriteProductButton } from '../favorite-buttons';
 import { Badge, PriceTag, RatingInline } from '../ui/misc';
-import { ScrollRow } from '../home/scroll-row';
 import { CardOrderButton } from './whatsapp-button';
 import { FallbackImg } from './fallback-img';
 
@@ -101,7 +100,7 @@ export function ProductCard({ product, priority }: { product: Card; priority?: b
         </p>
         <div className="mt-auto pt-2">
           <PriceTag current={p.currentPrice} reference={p.promotion?.referencePrice} />
-          {p.promotion && <p className="text-[11.5px] text-promo-700">Jusqu’au {formatDate(p.promotion.endsAt, { day: 'numeric', month: 'short' })}</p>}
+          {p.promotion && <p className="text-[11.5px] text-promo-700">{promoEnds(p.promotion.endsAt)}</p>}
         </div>
       </div>
     </article>
@@ -116,21 +115,5 @@ export function ProductGrid({ products, priorityCount = 0 }: { products: Card[];
         <ProductCard key={p.id} product={p} priority={i < priorityCount} />
       ))}
     </div>
-  );
-}
-
-/**
- * Rangée de cartes produit qu'on fait glisser au doigt ou avec les flèches, sur tous les écrans.
- * Rien ne défile tout seul.
- */
-export function ProductRow({ products, label = 'Produits' }: { products: Card[]; label?: string }) {
-  return (
-    <ScrollRow label={label} inset>
-      {products.map((p) => (
-        <div key={p.id} className="w-[44vw] max-w-[240px] shrink-0 sm:w-[38%] sm:max-w-none md:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
-          <ProductCard product={p} />
-        </div>
-      ))}
-    </ScrollRow>
   );
 }

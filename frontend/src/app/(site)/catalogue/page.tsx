@@ -20,7 +20,7 @@ export default async function CataloguePage({ searchParams }: { searchParams: Pr
   const q = parseFilters(sp).q;
   return (
     <>
-      <PageBanner eyebrow="Toutes les boutiques" title="Catalogue" subtitle="Neufs, reconditionnés et d’occasion, au même endroit.">
+      <PageBanner back={false} eyebrow="Toutes les boutiques" title="Catalogue" subtitle="Neufs, reconditionnés et d’occasion, au même endroit.">
         <form action="/catalogue" role="search" className="flex max-w-2xl gap-2 rounded-full bg-canvas p-1.5">
           <label htmlFor="catalog-search" className="sr-only">
             Rechercher un téléphone

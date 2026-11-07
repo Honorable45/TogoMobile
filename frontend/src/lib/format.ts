@@ -129,3 +129,19 @@ export const SPEC_LABELS: Record<string, string> = {
 export function plural(n: number, one: string, many: string) {
   return `${n.toLocaleString('fr-FR')} ${n > 1 ? many : one}`;
 }
+
+/**
+ * Fin d'une promotion, dite comme on la dirait à voix haute (heure de Lomé) :
+ * « Se termine ce soir à 23:55 », « Se termine demain à 12:00 », sinon « Jusqu’au 9 nov. ».
+ */
+export function promoEnds(endsAt: string | Date, now: Date = new Date()) {
+  const day = (d: Date) => formatDate(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const end = new Date(endsAt);
+  const time = formatDate(end, { hour: '2-digit', minute: '2-digit' });
+  if (day(end) === day(now)) {
+    const hour = parseInt(time, 10);
+    return hour >= 18 ? `Se termine ce soir à ${time}` : `Se termine aujourd’hui à ${time}`;
+  }
+  if (day(end) === day(new Date(now.getTime() + 86_400_000))) return `Se termine demain à ${time}`;
+  return `Jusqu’au ${formatDate(end, { day: 'numeric', month: 'short' })}`;
+}

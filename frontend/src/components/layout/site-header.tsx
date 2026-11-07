@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Heart, House, LayoutDashboard, LogOut, Search, ShieldCheck, Store, Tag, User, UserRound, Users } from 'lucide-react';
+import { Heart, House, LayoutDashboard, LogOut, Search, ShieldCheck, Store, Tag, User, UserRound } from 'lucide-react';
 import { brand } from '@/config/brand';
 import { useSession } from '../session';
 import { WhatsAppIcon } from '../ui/brand-icons';
@@ -13,7 +13,7 @@ import { Logo } from './logo';
 const NAV = [
   { href: '/', label: 'Accueil', Icon: House, match: (p: string) => p === '/' },
   { href: '/catalogue', label: 'Catalogue', Icon: Search, match: (p: string) => p.startsWith('/catalogue') || p.startsWith('/produits') },
-  { href: '/boutiques', label: 'Vendeurs', Icon: Users, match: (p: string) => p.startsWith('/boutiques') },
+  { href: '/boutiques', label: 'Boutiques', Icon: Store, match: (p: string) => p.startsWith('/boutiques') },
   { href: '/promotions', label: 'Promo du jour', Icon: Tag, match: (p: string) => p.startsWith('/promotions') },
 ];
 /** Onglets de la barre inférieure mobile (le compte est ajouté à part). */
@@ -117,6 +117,8 @@ function HeaderSearch() {
   const pathname = usePathname();
   const params = useSearchParams();
   const current = pathname.startsWith('/catalogue') ? (params.get('q') ?? '') : '';
+  // Le catalogue a sa propre grande barre de recherche : pas de deuxième barre dans l'en-tête.
+  if (pathname.startsWith('/catalogue')) return null;
   return (
     <form action="/catalogue" role="search" className="border-t border-white/80 px-2 py-1.5 md:hidden">
       <label htmlFor="header-search" className="sr-only">
@@ -153,6 +155,10 @@ function BottomNav() {
       active ? 'glass-dark text-white' : 'text-ink-2'
     }`;
   const accountActive = ACCOUNT_PATHS.some((p) => pathname.startsWith(p)) || open;
+
+  // Fiche produit : la barre « Commander sur WhatsApp » occupe le bas de l'écran ; deux barres
+  // empilées mangeraient près d'un cinquième de l'écran. Le logo et « Retour » restent en haut.
+  if (pathname.startsWith('/produits/')) return null;
 
   return (
     <nav
@@ -227,7 +233,7 @@ export function SiteHeader() {
                 <LayoutDashboard className="size-4 md:size-[18px]" aria-hidden /> Ma boutique
               </Link>
             ) : user?.role !== 'ADMIN' ? (
-              <Link href="/devenir-vendeur" aria-current={sellerActive ? 'page' : undefined} className={pill}>
+              <Link href="/devenir-vendeur" aria-current={sellerActive ? 'page' : undefined} className={`${pill} max-md:hidden`}>
                 <Store className="size-4 md:size-[18px]" aria-hidden /> Devenir vendeur
               </Link>
             ) : null}

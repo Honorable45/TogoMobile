@@ -11,7 +11,20 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
  * du contenu et la dernière visible dépasse à droite, pour inviter à faire glisser.
  * `inset` : rangée placée dans un bloc déjà centré (fiche produit, par exemple).
  */
-export function ScrollRow({ children, label, inset = false, className = '' }: { children: ReactNode; label: string; inset?: boolean; className?: string }) {
+export function ScrollRow({
+  children,
+  label,
+  inset = false,
+  className = '',
+  onNearEnd,
+}: {
+  children: ReactNode;
+  label: string;
+  inset?: boolean;
+  className?: string;
+  /** Rangée sans fin : appelé quand il reste moins d'un écran et demi de cartes à droite. */
+  onNearEnd?: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: false });
 
@@ -19,7 +32,8 @@ export function ScrollRow({ children, label, inset = false, className = '' }: { 
     const el = ref.current;
     if (!el) return;
     setEdges({ start: el.scrollLeft <= 4, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 });
-  }, []);
+    if (onNearEnd && el.scrollLeft + el.clientWidth * 2.5 >= el.scrollWidth) onNearEnd();
+  }, [onNearEnd]);
 
   useEffect(() => {
     update();
@@ -27,7 +41,13 @@ export function ScrollRow({ children, label, inset = false, className = '' }: { 
     if (!el) return;
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    // Les cartes ajoutées en fin de rangée changent la largeur défilable, pas celle de la rangée.
+    const mo = new MutationObserver(update);
+    mo.observe(el, { childList: true });
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
   }, [update]);
 
   // Une flèche avance d'environ un écran de cartes, en s'arrêtant sur une carte entière (scroll-snap).
@@ -56,12 +76,12 @@ export function ScrollRow({ children, label, inset = false, className = '' }: { 
       >
         {children}
       </div>
-      {!(edges.start && edges.end) && (
+      {!(edges.start && edges.end && !onNearEnd) && (
         <div className={`flex justify-end gap-3 ${inset ? '' : 'container-page'}`}>
           <button type="button" className={arrow} onClick={() => go(-1)} disabled={edges.start} aria-label="Précédent">
             <ChevronLeft className="size-5" aria-hidden />
           </button>
-          <button type="button" className={arrow} onClick={() => go(1)} disabled={edges.end} aria-label="Suivant">
+          <button type="button" className={arrow} onClick={() => go(1)} disabled={edges.end && !onNearEnd} aria-label="Suivant">
             <ChevronRight className="size-5" aria-hidden />
           </button>
         </div>

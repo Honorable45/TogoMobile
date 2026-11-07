@@ -10,13 +10,13 @@ export function SiteFooter() {
       title: 'Explorer',
       links: [
         { href: '/catalogue', label: 'Catalogue' },
-        { href: '/boutiques', label: 'Vendeurs' },
+        { href: '/boutiques', label: 'Boutiques' },
         { href: '/promotions', label: 'Promo du jour' },
         { href: '/comment-ca-marche', label: 'Comment ça marche' },
       ],
     },
     {
-      title: 'Vendeurs et informations',
+      title: 'Vendre et s’informer',
       links: [
         { href: '/connexion', label: 'Se connecter' },
         { href: '/devenir-vendeur', label: 'Devenir vendeur' },

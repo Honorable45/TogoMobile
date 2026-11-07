@@ -24,12 +24,12 @@ export default async function ShopsPage({ searchParams }: { searchParams: SP }) 
 
   return (
     <>
-    <PageBanner eyebrow="Vendeurs validés" title="Boutiques" subtitle="Chaque boutique est examinée par l’équipe avant d’apparaître ici.">
+    <PageBanner back={false} eyebrow="Boutiques validées" title="Boutiques" subtitle="Chaque boutique est examinée par l’équipe avant d’apparaître ici.">
       <form className="flex max-w-2xl bg-canvas flex-wrap gap-2 rounded-3xl p-1.5 sm:flex-nowrap sm:rounded-full" action="/boutiques">
         <label htmlFor="shop-q" className="sr-only">Rechercher une boutique</label>
-        <input id="shop-q" name="q" defaultValue={sp.q} placeholder="Nom de la boutique" className="h-11 min-w-0 flex-1 rounded-full bg-transparent px-4 text-[15px] text-ink placeholder:text-faint focus:outline-none" />
+        <input id="shop-q" name="q" defaultValue={sp.q} placeholder="Nom de la boutique" className="h-11 w-full min-w-0 rounded-full bg-transparent px-4 sm:w-auto sm:flex-1 text-[15px] text-ink placeholder:text-faint focus:outline-none" />
         <label htmlFor="shop-sort" className="sr-only">Trier</label>
-        <select id="shop-sort" name="sort" defaultValue={sort} className="h-11 rounded-full bg-surface px-3 text-sm text-ink">
+        <select id="shop-sort" name="sort" defaultValue={sort} className="h-11 min-w-0 flex-1 rounded-full bg-surface px-3 text-sm text-ink sm:flex-none">
           <option value="recent">Récemment validées</option>
           <option value="rating">Mieux notées</option>
           <option value="name">Nom (A–Z)</option>

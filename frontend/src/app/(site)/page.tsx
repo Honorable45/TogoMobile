@@ -2,10 +2,9 @@ import Link from 'next/link';
 import { BadgeCheck, ChevronRight, MessageCircle, QrCode, ReceiptText, Search, SearchX, ShieldCheck, Store, Tag, Wrench } from 'lucide-react';
 import { FeatureCarousel } from '@/components/home/feature-carousel';
 import { slidesFromAds, slidesFromPromotions } from '@/components/home/hero-slides';
-import { LineupTile } from '@/components/home/lineup-tile';
 import { ScrollRow } from '@/components/home/scroll-row';
 import { EmptyState } from '@/components/ui/misc';
-import { ProductCard as ProductCardView } from '@/components/product/product-card';
+import { EndlessRow } from '@/components/home/endless-row';
 import { ShopCard } from '@/components/shop/shop-card';
 import { ButtonLink } from '@/components/ui/button';
 import { brand } from '@/config/brand';
@@ -59,7 +58,7 @@ export default async function HomePage() {
   const shortcuts = [
     { href: '/promotions', label: 'Promo du jour', Icon: Tag, note: data.promotions.length ? '24 h' : null },
     { href: '/boutiques', label: 'Boutiques', Icon: Store, note: null },
-    { href: '/catalogue', label: 'Tout voir', Icon: Search, note: null },
+    { href: '/catalogue', label: 'Catalogue', Icon: Search, note: null },
     { href: '/devenir-vendeur', label: 'Vendre', Icon: ShieldCheck, note: null },
   ];
 
@@ -74,9 +73,9 @@ export default async function HomePage() {
                 <span className="sr-only">{brand.name}</span>
                 {/* Logotype en grand, comme « iPhone » sur apple.com */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/logo.svg" alt="" width={366} height={96} className="h-12 w-auto bg-transparent md:h-[76px]" />
+                <img src="/brand/logo.svg" alt="" width={366} height={96} className="hidden h-12 w-auto bg-transparent md:block md:h-[76px]" />
               </h1>
-              <p className="mt-1 text-[19px] text-muted md:text-[21px]">{brand.motto}.</p>
+              <p className="display text-[32px] leading-tight text-ink md:mt-1 md:font-sans md:text-[21px] md:font-normal md:tracking-normal md:text-muted">{brand.motto}.</p>
             </div>
             <form action="/catalogue" role="search" className="hidden w-full max-w-sm md:block">
               <label htmlFor="home-search" className="sr-only">Rechercher un téléphone</label>
@@ -95,7 +94,7 @@ export default async function HomePage() {
           </div>
         </div>
         <nav aria-label="Marques et raccourcis" className="mt-8 md:mt-12">
-          <ul className="scroller gap-6 px-4 pb-2 sm:px-6 md:gap-8 md:pl-[max(1.5rem,calc((100vw-76rem)/2+1.5rem))]">
+          <ul className="scroller gap-3 px-4 pb-2 sm:px-6 md:gap-8 md:pl-[max(1.5rem,calc((100vw-76rem)/2+1.5rem))]">
             {brandItems.map((b) => (
               <li key={b.href} className="shrink-0">
                 <Link href={b.href} className="group flex w-[76px] flex-col items-center gap-2 text-center">
@@ -133,10 +132,8 @@ export default async function HomePage() {
 
       {data.promotions.length > 0 && (
         <section aria-labelledby="promo" className="bg-canvas pt-16 md:pt-24">
-          <SectionHead id="promo" title="Promo du jour." href="/promotions" link="Toutes les promos" />
-          <ScrollRow label="Promo du jour">
-            {data.promotions.map((p) => <LineupTile key={p.id} product={p} />)}
-          </ScrollRow>
+          <SectionHead id="promo" title="Promo du jour." />
+          <EndlessRow initial={data.promotions} query="promo=true&sort=discount" label="Promo du jour" variant="lineup" />
         </section>
       )}
 
@@ -158,14 +155,8 @@ export default async function HomePage() {
 
       {data.newest.length > 0 && (
         <section aria-labelledby="nouveautes" className="bg-surface pt-16 md:pt-24">
-          <SectionHead id="nouveautes" title="Nouveautés." href="/catalogue" link="Tout le catalogue" />
-          <ScrollRow label="Nouveautés">
-            {data.newest.map((p) => (
-              <div key={p.id} className="shrink-0 [&_article>div:first-child]:bg-canvas">
-                <LineupTile product={p} />
-              </div>
-            ))}
-          </ScrollRow>
+          <SectionHead id="nouveautes" title="Nouveautés." />
+          <EndlessRow initial={data.newest} query="sort=recent&available=true" label="Nouveautés" variant="lineup" canvasTiles />
         </section>
       )}
 
@@ -193,19 +184,10 @@ export default async function HomePage() {
         {brandRows.length ? (
           brandRows.map(({ brand: b, page: pg }) => (
             <div key={b.id} className="pt-8 md:pt-12">
-              <div className="container-page mb-5 flex items-baseline justify-between gap-4">
+              <div className="container-page mb-5">
                 <h3 className="display text-[24px] md:text-[28px]">{b.name === 'Xiaomi' ? 'Xiaomi & Redmi' : b.name}.</h3>
-                <Link href={`/catalogue?brand=${b.slug}`} className="inline-flex shrink-0 items-center gap-0.5 text-[15px] text-brand-600 hover:underline">
-                  Tout voir{pg.total > pg.items.length ? ` (${pg.total})` : ''} <ChevronRight className="size-4" aria-hidden />
-                </Link>
               </div>
-              <ScrollRow label={`Téléphones ${b.name}`}>
-                {pg.items.map((p) => (
-                  <div key={p.id} className="w-[44vw] max-w-[240px] shrink-0 sm:w-[240px]">
-                    <ProductCardView product={p} />
-                  </div>
-                ))}
-              </ScrollRow>
+              <EndlessRow initial={pg.items} query={`brand=${b.slug}`} loadedPages={1} label={`Téléphones ${b.name}`} />
             </div>
           ))
         ) : (
