@@ -1,19 +1,11 @@
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
 
 from . import services
 from core.errors import ApiError
+from core.throttling import throttles
 
 from .params import catalog_query, page_query
-
-
-class WhatsappThrottle(AnonRateThrottle):
-    scope = 'whatsapp'
-
-
-class ViewThrottle(AnonRateThrottle):
-    scope = 'view'
 
 
 @api_view(['GET'])
@@ -53,13 +45,13 @@ def shop_reviews(request, slug):
 
 
 @api_view(['POST'])
-@throttle_classes([WhatsappThrottle])
+@throttle_classes(throttles('whatsapp'))
 def product_whatsapp(request, id):
     return Response(services.whatsapp(id))
 
 
 @api_view(['POST'])
-@throttle_classes([ViewThrottle])
+@throttle_classes(throttles('view'))
 def product_view(request, id):
     services.view(id)
     return Response(status=204)

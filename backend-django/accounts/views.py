@@ -1,19 +1,15 @@
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
 
 from core.auth import clear_cookie, create_session, require_user, revoke
+from core.throttling import throttles
 from core.validation import Body
 
 from . import services
 
 
-def _throttle(name):
-    return type(f'{name.title()}Throttle', (AnonRateThrottle,), {'scope': name})
-
-
 @api_view(['POST'])
-@throttle_classes([_throttle('register')])
+@throttle_classes(throttles('register'))
 def register(request):
     b = Body(request.data, {'name', 'email', 'phone', 'password'})
     name = b.text('name', 2, 80, msg='Le nom doit contenir entre 2 et 80 caractères.')
@@ -26,7 +22,7 @@ def register(request):
 
 
 @api_view(['POST'])
-@throttle_classes([_throttle('login')])
+@throttle_classes(throttles('login'))
 def login(request):
     b = Body(request.data, {'identifier', 'password'})
     identifier = b.text('identifier', 3, 160)
@@ -60,7 +56,7 @@ def me(request):
 
 
 @api_view(['POST'])
-@throttle_classes([_throttle('password_change')])
+@throttle_classes(throttles('password_change'))
 def password_change(request):
     user = require_user(request)
     b = Body(request.data, {'currentPassword', 'newPassword'})
@@ -72,7 +68,7 @@ def password_change(request):
 
 
 @api_view(['POST'])
-@throttle_classes([_throttle('password_forgot')])
+@throttle_classes(throttles('password_forgot'))
 def password_forgot(request):
     b = Body(request.data, {'email'})
     email = b.email('email', required=True)
@@ -82,7 +78,7 @@ def password_forgot(request):
 
 
 @api_view(['POST'])
-@throttle_classes([_throttle('password_reset')])
+@throttle_classes(throttles('password_reset'))
 def password_reset(request):
     b = Body(request.data, {'token', 'password'})
     token = b.text('token', 20, 100, trim=False)

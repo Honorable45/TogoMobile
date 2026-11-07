@@ -2,6 +2,7 @@
 
 import logging
 
+from django.core.exceptions import RequestDataTooBig
 from rest_framework.exceptions import Throttled
 from rest_framework.response import Response
 
@@ -22,6 +23,8 @@ def handle(exc, context):
         if exc.code:
             body['code'] = exc.code
         return Response(body, status=exc.status)
+    if isinstance(exc, RequestDataTooBig):
+        return Response({'statusCode': 413, 'message': 'Requête trop volumineuse.'}, status=413)
     if isinstance(exc, Throttled):
         return Response({'statusCode': 429, 'message': 'Trop de tentatives. Patientez une minute puis réessayez.'}, status=429)
     from rest_framework.views import exception_handler  # import tardif : évite une boucle avec l'authentification

@@ -75,9 +75,27 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.OriginCheckMiddleware',
 ]
+
+# ─── En-têtes de sécurité (équivalent de helmet côté Node) ──────────────────
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'no-referrer'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+# Derrière le proxy HTTPS de l'hébergeur : le schéma d'origine est transmis par X-Forwarded-Proto.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 15552000  # 180 jours
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SSL_REDIRECT', True)
+    SECURE_REDIRECT_EXEMPT = [r'^api/v1/health']
+
+# Taille maximale des corps de requête (JSON) : 200 Ko, comme l'API Node.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024
 
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -105,7 +123,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [],
     'UNAUTHENTICATED_USER': None,
     'EXCEPTION_HANDLER': 'core.errors.handle',
+    'DEFAULT_THROTTLE_CLASSES': ['core.throttling.IpThrottle'],
+    # Proxys de confiance devant l'API (hébergeur) : comme TRUST_PROXY_HOPS côté Node.
+    'NUM_PROXIES': int(env('TRUST_PROXY_HOPS', '1')),
     'DEFAULT_THROTTLE_RATES': {
+        'global': f"{int(env('RATE_LIMIT_PER_MINUTE', '120'))}/min",
         'whatsapp': '20/min',
         'view': '60/min',
         'register': '5/min',
@@ -127,3 +149,10 @@ LOGGING = {
     'handlers': {'console': {'class': 'logging.StreamHandler'}},
     'root': {'handlers': ['console'], 'level': env('LOG_LEVEL', 'INFO')},
 }
+
+# Avertissements de `manage.py check --deploy` écartés en connaissance de cause :
+#  - security.W003 : pas de formulaires Django ; la protection CSRF repose, comme côté Node, sur le cookie
+#    de session SameSite=Lax et sur OriginCheckMiddleware (origine vérifiée pour toute requête qui modifie).
+#  - security.W021 : l'inscription à la liste HSTS « preload » engage durablement le domaine ; décision à prendre
+#    au moment de la mise en production (SECURE_HSTS_PRELOAD = True).
+SILENCED_SYSTEM_CHECKS = ['security.W003', 'security.W021']
