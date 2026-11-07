@@ -1,28 +1,19 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
-const INTERVAL_MS = 4000;
-const RESUME_AFTER_TOUCH_MS = 8000;
-
 /**
- * Rangée de cartes qui défile horizontalement, avec flèches en bas à droite (façon apple.com).
- * Les cartes s'alignent sur la marge du contenu et la dernière visible dépasse pour inviter à faire défiler.
+ * Rangée de cartes qu'on fait glisser au doigt (ou avec les flèches), façon apple.com.
+ * Rien ne bouge tout seul : c'est la personne qui fait défiler.
  *
- * `auto` : avance d'une carte toutes les 4 s (de droite à gauche), puis revient au début.
- * Pas de défilement continu : une carte qui bouge sans arrêt ne se lit pas et ne se touche pas.
- * Pause au survol, au toucher (reprise après 8 s), au focus clavier, hors de l'écran, onglet masqué,
- * et aucune animation si le système demande de réduire les mouvements. Bouton pause pour l'arrêter.
+ * Par défaut, la rangée occupe toute la largeur de l'écran : la première carte s'aligne sur la marge
+ * du contenu et la dernière visible dépasse à droite, pour inviter à faire glisser.
+ * `inset` : rangée placée dans un bloc déjà centré (fiche produit, par exemple).
  */
-export function ScrollRow({ children, label, auto = false, className = '' }: { children: ReactNode; label: string; auto?: boolean; className?: string }) {
+export function ScrollRow({ children, label, inset = false, className = '' }: { children: ReactNode; label: string; inset?: boolean; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: false });
-  const [stopped, setStopped] = useState(false); // choix explicite de la personne (bouton)
-  const [hold, setHold] = useState(false); // survol, toucher, focus
-  const [visible, setVisible] = useState(false);
-  const [reduced, setReduced] = useState(false);
-  const resume = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const update = useCallback(() => {
     const el = ref.current;
@@ -36,51 +27,22 @@ export function ScrollRow({ children, label, auto = false, className = '' }: { c
     if (!el) return;
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.4 });
-    io.observe(el);
-    setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    return () => {
-      ro.disconnect();
-      io.disconnect();
-      clearTimeout(resume.current);
-    };
+    return () => ro.disconnect();
   }, [update]);
 
-  const step = () => {
-    const el = ref.current;
-    const card = el?.firstElementChild as HTMLElement | null;
-    if (!el || !card) return el ? el.clientWidth * 0.8 : 0;
-    return card.offsetWidth + parseFloat(getComputedStyle(el).columnGap || '0');
-  };
-
-  const playing = auto && !reduced && !stopped && !hold && visible;
-
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(() => {
-      const el = ref.current;
-      if (!el || document.hidden) return;
-      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + step(), behavior: 'smooth' });
-    }, INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [playing]);
-
+  // Une flèche avance d'environ un écran de cartes, en s'arrêtant sur une carte entière (scroll-snap).
   const go = (dir: 1 | -1) => {
     const el = ref.current;
     if (!el) return;
-    setStopped(true); // la personne a pris la main : on ne lui reprend pas
-    el.scrollBy({ left: dir * Math.max(step(), el.clientWidth * 0.8), behavior: 'smooth' });
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
   };
 
-  const holdThenResume = () => {
-    setHold(true);
-    clearTimeout(resume.current);
-    resume.current = setTimeout(() => setHold(false), RESUME_AFTER_TOUCH_MS);
-  };
-
-  const button =
+  const arrow =
     'inline-flex size-9 items-center justify-center rounded-full bg-paper-2 text-ink-2 transition-colors hover:bg-paper-3 disabled:cursor-default disabled:opacity-35';
+  const bleed =
+    'pl-[max(1rem,calc((100vw-76rem)/2+1.5rem))] pr-4 scroll-pl-[max(1rem,calc((100vw-76rem)/2+1.5rem))] sm:pl-[max(1.5rem,calc((100vw-76rem)/2+1.5rem))]';
+  // Dans un bloc centré : la rangée déborde jusqu'aux bords de l'écran sur mobile, reste dans la colonne au-delà.
+  const insetPad = '-mx-4 px-4 scroll-pl-4 sm:-mx-6 sm:px-6 sm:scroll-pl-6 lg:mx-0 lg:px-0 lg:scroll-pl-0';
 
   return (
     <div className={className}>
@@ -89,33 +51,17 @@ export function ScrollRow({ children, label, auto = false, className = '' }: { c
         onScroll={update}
         role="region"
         aria-label={label}
-        aria-roledescription={auto ? 'carrousel' : undefined}
         tabIndex={0}
-        onMouseEnter={() => setHold(true)}
-        onMouseLeave={() => setHold(false)}
-        onFocusCapture={() => setHold(true)}
-        onBlurCapture={() => setHold(false)}
-        onTouchStart={holdThenResume}
-        className="scroller gap-4 pb-6 pl-[max(1rem,calc((100vw-76rem)/2+1.5rem))] pr-4 scroll-pl-[max(1rem,calc((100vw-76rem)/2+1.5rem))] sm:pl-[max(1.5rem,calc((100vw-76rem)/2+1.5rem))] md:gap-5"
+        className={`scroller gap-4 pb-6 md:gap-5 ${inset ? insetPad : bleed}`}
       >
         {children}
       </div>
       {!(edges.start && edges.end) && (
-        <div className="container-page flex justify-end gap-3">
-          {auto && !reduced && (
-            <button
-              type="button"
-              className={button}
-              onClick={() => setStopped((s) => !s)}
-              aria-label={stopped ? `Reprendre le défilement : ${label}` : `Mettre en pause : ${label}`}
-            >
-              {stopped ? <Play className="size-4 fill-current" aria-hidden /> : <Pause className="size-4 fill-current" aria-hidden />}
-            </button>
-          )}
-          <button type="button" className={button} onClick={() => go(-1)} disabled={edges.start} aria-label="Précédent">
+        <div className={`flex justify-end gap-3 ${inset ? '' : 'container-page'}`}>
+          <button type="button" className={arrow} onClick={() => go(-1)} disabled={edges.start} aria-label="Précédent">
             <ChevronLeft className="size-5" aria-hidden />
           </button>
-          <button type="button" className={button} onClick={() => go(1)} disabled={edges.end} aria-label="Suivant">
+          <button type="button" className={arrow} onClick={() => go(1)} disabled={edges.end} aria-label="Suivant">
             <ChevronRight className="size-5" aria-hidden />
           </button>
         </div>

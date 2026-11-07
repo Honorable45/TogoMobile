@@ -1,22 +1,19 @@
 import Link from 'next/link';
-import { BadgeCheck, ChevronRight, Laptop, MessageCircle, QrCode, ReceiptText, Search, SearchX, ShieldCheck, Smartphone, Store, Tag, Tv, Wrench } from 'lucide-react';
-import { SortSelect } from '@/components/product/catalog-filters';
-import { InfiniteProductGrid } from '@/components/ui/infinite-list';
+import { BadgeCheck, ChevronRight, MessageCircle, QrCode, ReceiptText, Search, SearchX, ShieldCheck, Store, Tag, Wrench } from 'lucide-react';
 import { FeatureCarousel } from '@/components/home/feature-carousel';
 import { slidesFromAds, slidesFromPromotions } from '@/components/home/hero-slides';
 import { LineupTile } from '@/components/home/lineup-tile';
 import { ScrollRow } from '@/components/home/scroll-row';
 import { EmptyState } from '@/components/ui/misc';
+import { ProductCard as ProductCardView } from '@/components/product/product-card';
 import { ShopCard } from '@/components/shop/shop-card';
 import { ButtonLink } from '@/components/ui/button';
 import { brand } from '@/config/brand';
-import { apiGet, cacheTags, toQuery } from '@/lib/api-server';
-import { MAIN_CATEGORIES, PRODUCT_TYPES, plural } from '@/lib/format';
+import { apiGet, cacheTags } from '@/lib/api-server';
 import type { HomeData, Page, ProductCard } from '@/lib/types';
 
 
-const CATEGORY_ICONS = { telephones: Smartphone, ordinateurs: Laptop, 'smart-tv': Tv } as const;
-const SORTS = ['recent', 'price_asc', 'price_desc', 'discount', 'rating', 'popular'];
+const BRAND_ROW_SIZE = 12;
 const EMPTY_PAGE: Page<ProductCard> = { items: [], page: 1, pageSize: 24, total: 0, totalPages: 0 };
 
 /** Arguments « Pourquoi acheter ici » : ce que la plateforme garantit réellement. */
@@ -42,31 +39,17 @@ function SectionHead({ id, title, href, link }: { id?: string; title: string; hr
   );
 }
 
-type HomeParams = { category?: string; type?: string; sort?: string; page?: string };
-
-/** Lien de l'accueil qui conserve les filtres courants, en remplaçant ceux donnés. */
-function homeHref(current: HomeParams, patch: Partial<HomeParams>, hash = '') {
-  const merged = { ...current, page: undefined, ...patch };
-  return `/${toQuery({ category: merged.category, type: merged.type, sort: merged.sort, page: merged.page })}${hash}`;
-}
-
-export default async function HomePage({ searchParams }: { searchParams: Promise<HomeParams> }) {
-  const sp = await searchParams;
-  const category = MAIN_CATEGORIES.find((c) => c.slug === sp.category);
-  const type = PRODUCT_TYPES.find((t) => t.slug === sp.type);
-  const sort = sp.sort && SORTS.includes(sp.sort) ? sp.sort : 'recent';
-  const page = Math.min(1000, Math.max(1, Number(sp.page) || 1));
-  const current: HomeParams = { category: category?.slug, type: type?.slug, sort: sort === 'recent' ? undefined : sort };
+export default async function HomePage() {
   const tags = [cacheTags.catalog];
-  const productsPath = `/catalog/products${toQuery({ category: category?.slug, condition: type ? [...type.conditions] : undefined, sort, pageSize: 24 })}`;
-
   // Repli si l'API est momentanément injoignable (y compris pendant le build).
-  const [data, products, ...categoryPages] = await Promise.all([
-    apiGet<HomeData>('/home', { tags: [cacheTags.home, cacheTags.catalog] }).catch((): HomeData => ({ heroAds: [], brands: [], newest: [], popular: [], promotions: [], shops: [] })),
-    apiGet<Page<ProductCard>>(`${productsPath}${productsPath.includes('?') ? '&' : '?'}page=${page}`, { tags }).catch(() => EMPTY_PAGE),
-    ...MAIN_CATEGORIES.map((c) => apiGet<Page<ProductCard>>(`/catalog/products?category=${c.slug}&pageSize=1`, { tags }).catch(() => EMPTY_PAGE)),
-  ]);
-  const categoryCount = new Map(MAIN_CATEGORIES.map((c, i) => [c.slug, categoryPages[i].total]));
+  const data = await apiGet<HomeData>('/home', { tags: [cacheTags.home, cacheTags.catalog] }).catch(
+    (): HomeData => ({ heroAds: [], brands: [], newest: [], popular: [], promotions: [], shops: [] }),
+  );
+  // Une rangée par marque mise en avant (ordre de l'administration), les plus récents d'abord.
+  const brandPages = await Promise.all(
+    data.brands.map((b) => apiGet<Page<ProductCard>>(`/catalog/products?brand=${b.slug}&pageSize=${BRAND_ROW_SIZE}`, { tags }).catch(() => EMPTY_PAGE)),
+  );
+  const brandRows = data.brands.map((b, i) => ({ brand: b, page: brandPages[i] })).filter((r) => r.page.items.length > 0);
   // Cartes vedettes : publicités de l'administration, sinon promotions en cours des boutiques.
   const slides = data.heroAds?.length ? slidesFromAds(data.heroAds) : slidesFromPromotions(data.promotions);
 
@@ -146,7 +129,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.promotions.length > 0 && (
         <section aria-labelledby="promo" className="bg-canvas pt-16 md:pt-24">
           <SectionHead id="promo" title="Promo du jour." href="/promotions" link="Toutes les promos" />
-          <ScrollRow label="Promo du jour" auto>
+          <ScrollRow label="Promo du jour">
             {data.promotions.map((p) => <LineupTile key={p.id} product={p} />)}
           </ScrollRow>
         </section>
@@ -171,7 +154,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.newest.length > 0 && (
         <section aria-labelledby="nouveautes" className="bg-surface pt-16 md:pt-24">
           <SectionHead id="nouveautes" title="Nouveautés." href="/catalogue" link="Tout le catalogue" />
-          <ScrollRow label="Nouveautés" auto>
+          <ScrollRow label="Nouveautés">
             {data.newest.map((p) => (
               <div key={p.id} className="shrink-0 [&_article>div:first-child]:bg-canvas">
                 <LineupTile product={p} />
@@ -184,7 +167,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.shops.length > 0 && (
         <section aria-labelledby="boutiques" className="bg-surface py-16 md:py-24">
           <SectionHead id="boutiques" title="Des boutiques validées." href="/boutiques" link="Toutes les boutiques" />
-          <ScrollRow label="Boutiques" auto>
+          <ScrollRow label="Boutiques">
             {data.shops.map((s) => (
               <div key={s.id} className="w-[85vw] max-w-[380px] shrink-0">
                 <ShopCard shop={s} />
@@ -194,99 +177,45 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </section>
       )}
 
-      <div className="bg-canvas py-16 md:py-24">
-        <div className="container-page space-y-6">
-        <section id="produits" aria-labelledby="tous-les-produits" className="scroll-mt-36 md:scroll-mt-28">
-          <p className="eyebrow mb-1 text-promo-700">{category ? category.label : 'Tout le catalogue'}</p>
-          <h2 id="tous-les-produits" className="display mb-6 text-[32px] text-ink md:text-[48px]">
-            Tous les produits.
-          </h2>
-          <div className="mb-4">
-            <h2 id="categories" className="sr-only">
-              Catégories
-            </h2>
-            <ul className="grid grid-cols-3 gap-2 md:flex md:flex-wrap">
-              {MAIN_CATEGORIES.map((c) => {
-                const Icon = CATEGORY_ICONS[c.slug];
-                const active = category?.slug === c.slug;
-                const count = categoryCount.get(c.slug) ?? 0;
-                return (
-                  <li key={c.slug}>
-                    <Link
-                      href={homeHref(current, { category: active ? undefined : c.slug }, '#produits')}
-                      scroll={false}
-                      aria-current={active ? 'true' : undefined}
-                      title={count ? plural(count, 'produit', 'produits') : 'Bientôt disponible'}
-                      className={`flex h-10 items-center justify-center gap-1.5 rounded-full border px-2 text-[13px] font-semibold transition-colors active:scale-[.98] md:h-11 md:px-5 md:text-sm ${
-                        active ? 'border-ink bg-ink text-white' : 'border-transparent bg-surface text-ink hover:border-line-2'
-                      } ${count || active ? '' : 'opacity-60'}`}
-                    >
-                      <Icon className="size-4 shrink-0" aria-hidden />
-                      <span className="truncate">{c.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            </div>
-
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <nav aria-label="Type de produit" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 py-0.5">
-              {[{ slug: undefined, label: 'Tous', hint: undefined as string | undefined }, ...PRODUCT_TYPES].map((t) => {
-                const active = type?.slug === t.slug;
-                return (
-                  <Link
-                    key={t.label}
-                    href={homeHref(current, { type: t.slug }, '#produits')}
-                    scroll={false}
-                    title={'hint' in t ? t.hint : undefined}
-                    aria-current={active ? 'true' : undefined}
-                    className={`inline-flex h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors ${
-                      active ? 'border-ink bg-ink text-white' : 'border-transparent bg-surface text-ink-2 hover:border-line-2'
-                    }`}
-                  >
-                    {t.label}
-                  </Link>
-                );
-              })}
-            </nav>
-            <SortSelect value={sort} />
-          </div>
-          <p className="mb-4 text-sm text-muted" aria-live="polite">
-            <span className="font-bold text-ink">{plural(products.total, 'produit', 'produits')}</span>
-            {type && ` · ${type.label.toLowerCase()}`}
-          </p>
-          {products.items.length ? (
-            <>
-              <InfiniteProductGrid
-                key={productsPath}
-                first={products}
-                path={productsPath}
-                priorityCount={2}
-                nextHref={homeHref(current, { page: String(products.page + 1) }, '#produits')}
-              />
-            </>
-          ) : (
-            <EmptyState
-              icon={<SearchX className="size-10" />}
-              title={category && !categoryCount.get(category.slug) ? `${category.label} : bientôt disponible` : 'Aucun produit pour ce choix'}
-              action={
-                category || type ? (
-                  <ButtonLink href="/#produits" variant="outline">
-                    Voir tous les produits
-                  </ButtonLink>
-                ) : undefined
-              }
-            >
-              {category && !categoryCount.get(category.slug)
-                ? 'Les boutiques ajoutent leurs premiers articles dans ce rayon.'
-                : 'Essayez un autre type ou une autre catégorie.'}
-            </EmptyState>
-          )}
-        </section>
-
+      {/* Tous les téléphones, rangés par marque : chaque rangée se fait glisser au doigt ou avec les flèches. */}
+      <section aria-labelledby="par-marque" className="bg-canvas pt-16 md:pt-24">
+        <div className="container-page mb-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <h2 id="par-marque" className="display text-[32px] md:text-[48px]">Choisissez votre marque.</h2>
+          <Link href="/catalogue" className="inline-flex items-center gap-0.5 text-[17px] text-brand-600 hover:underline">
+            Rechercher et filtrer <ChevronRight className="size-4" aria-hidden />
+          </Link>
         </div>
-      </div>
+        {brandRows.length ? (
+          brandRows.map(({ brand: b, page: pg }) => (
+            <div key={b.id} className="pt-8 md:pt-12">
+              <div className="container-page mb-5 flex items-baseline justify-between gap-4">
+                <h3 className="display text-[24px] md:text-[28px]">{b.name === 'Xiaomi' ? 'Xiaomi & Redmi' : b.name}.</h3>
+                <Link href={`/catalogue?brand=${b.slug}`} className="inline-flex shrink-0 items-center gap-0.5 text-[15px] text-brand-600 hover:underline">
+                  Tout voir{pg.total > pg.items.length ? ` (${pg.total})` : ''} <ChevronRight className="size-4" aria-hidden />
+                </Link>
+              </div>
+              <ScrollRow label={`Téléphones ${b.name}`}>
+                {pg.items.map((p) => (
+                  <div key={p.id} className="w-[46vw] max-w-[260px] shrink-0 sm:w-[260px]">
+                    <ProductCardView product={p} />
+                  </div>
+                ))}
+              </ScrollRow>
+            </div>
+          ))
+        ) : (
+          <div className="container-page pb-4 pt-8">
+            <EmptyState icon={<SearchX className="size-10" />} title="Aucun téléphone pour le moment" action={<ButtonLink href="/catalogue">Voir le catalogue</ButtonLink>}>
+              Les boutiques ajoutent leurs premiers articles.
+            </EmptyState>
+          </div>
+        )}
+        <div className="container-page pb-16 pt-6 md:pb-24">
+          <ButtonLink href="/catalogue" variant="outline" size="lg">
+            Voir tout le catalogue
+          </ButtonLink>
+        </div>
+      </section>
 
       {/* Deux grandes cartes, façon « essentiels » : vendre et comprendre le fonctionnement. */}
       <section aria-labelledby="vendre" className="bg-surface py-16 md:py-24">
