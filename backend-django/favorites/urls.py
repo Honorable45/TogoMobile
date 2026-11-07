@@ -1,3 +1,5 @@
+"""Adresses des favoris de l'utilisateur connecté (annonces et boutiques)."""
+
 from django.urls import path
 
 from . import views

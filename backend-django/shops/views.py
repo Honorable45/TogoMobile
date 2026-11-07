@@ -1,9 +1,10 @@
+"""Routes publiques des boutiques (/api/v1/shops…). Le travail est fait dans services.py."""
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from catalog.params import shop_list_query
-
 from . import services
+from .params import shop_list_query
 
 
 @api_view(['GET'])

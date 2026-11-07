@@ -1,3 +1,5 @@
+"""Routes des comptes (/api/v1/auth/…) : elles lisent et vérifient la requête, le travail est fait dans services.py."""
+
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 

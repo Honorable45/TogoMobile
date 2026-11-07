@@ -1,3 +1,5 @@
+"""Adresses des comptes : inscription, connexion, profil, mot de passe, appareils connectés."""
+
 from django.urls import path
 
 from . import views

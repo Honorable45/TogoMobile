@@ -1,3 +1,5 @@
+"""Adresses publiques des boutiques : liste et page d'une boutique."""
+
 from django.urls import path
 
 from . import views

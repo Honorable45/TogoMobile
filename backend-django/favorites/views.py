@@ -1,8 +1,10 @@
+"""Routes des favoris (/api/v1/me/favorites/…), réservées aux utilisateurs connectés. Le travail est fait dans services.py."""
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from catalog.params import fail, page_query
 from core.auth import require_user
+from core.params import fail, page_query
 
 from . import services
 

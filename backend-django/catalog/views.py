@@ -1,57 +1,60 @@
+"""
+Routes publiques du catalogue (/api/v1/…). Chaque vue lit la requête puis appelle le module qui fait le travail :
+search (recherche), product (fiche, similaires, WhatsApp, vues), home (accueil), reviews (avis).
+"""
+
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 
-from . import services
-from core.errors import ApiError
+from core.params import fail, page_query
 from core.throttling import throttles
 
-from .params import catalog_query, page_query
+from . import home as home_data, product, reviews, search
+from .params import catalog_query
 
 
 @api_view(['GET'])
 def home(request):
-    return Response(services.home())
+    return Response(home_data.home())
 
 
 @api_view(['GET'])
 def catalog_products(request):
-    return Response(services.search(catalog_query(request.query_params)))
+    return Response(search.search(catalog_query(request.query_params)))
 
 
 @api_view(['GET'])
 def product_detail(request, slug):
-    return Response(services.detail(slug))
+    return Response(product.detail(slug))
 
 
 @api_view(['GET'])
 def product_similar(request, slug):
-    return Response(services.similar(slug))
+    return Response(product.similar(slug))
 
 
 @api_view(['GET'])
 def product_reviews(request, slug):
     page, size, errors = page_query(request.query_params)
-    if errors:
-        raise ApiError(400, next(iter(errors.values())), errors)
-    return Response(services.product_reviews(slug, page, size))
+    fail(errors)
+    return Response(reviews.product_reviews(slug, page, size))
 
 
 @api_view(['GET'])
 def shop_reviews(request, slug):
     page, size, errors = page_query(request.query_params)
-    if errors:
-        raise ApiError(400, next(iter(errors.values())), errors)
-    return Response(services.shop_reviews(slug, page, size))
+    fail(errors)
+    return Response(reviews.shop_reviews(slug, page, size))
 
 
 @api_view(['POST'])
 @throttle_classes(throttles('whatsapp'))
 def product_whatsapp(request, id):
-    return Response(services.whatsapp(id))
+    return Response(product.whatsapp(id))
 
 
 @api_view(['POST'])
 @throttle_classes(throttles('view'))
 def product_view(request, id):
-    services.view(id)
+    product.view(id)
     return Response(status=204)

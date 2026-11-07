@@ -1,3 +1,5 @@
+"""Adresses publiques du catalogue : accueil, recherche, fiche produit, avis, clic WhatsApp, vues."""
+
 from django.urls import path
 
 from . import views
