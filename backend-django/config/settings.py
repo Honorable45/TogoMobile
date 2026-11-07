@@ -28,6 +28,8 @@ ALLOWED_HOSTS = [h.strip() for h in env('DJANGO_ALLOWED_HOSTS', 'localhost,127.0
 API_URL = env('API_URL', 'http://localhost:4000').rstrip('/')
 WEB_URL = env('WEB_URL', 'http://localhost:3000').rstrip('/')
 PAGINATION_MAX_OFFSET = int(env('PAGINATION_MAX_OFFSET', '5000'))
+# Relais de migration vers l'API Node pour les routes pas encore réécrites (vide = désactivé).
+LEGACY_API_URL = (env('LEGACY_API_URL') or '').rstrip('/')
 CORS_ORIGINS = [o.strip() for o in env('CORS_ORIGINS', 'http://localhost:3000').split(',') if o.strip()]
 if env('ADMIN_URL'):
     CORS_ORIGINS.append(env('ADMIN_URL'))
