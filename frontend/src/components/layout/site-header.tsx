@@ -158,7 +158,7 @@ function BottomNav() {
     <nav
       id="bottom-nav"
       aria-label="Navigation mobile"
-      className="glass-light fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[26px] p-1 md:hidden"
+      className="glass-bar fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 rounded-[26px] p-1 md:hidden"
     >
       <div ref={ref} className="relative grid grid-cols-4 gap-1">
         {BOTTOM_NAV.map((n) => (
@@ -211,7 +211,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="glass-light fixed inset-x-3 top-3 z-40 rounded-[28px] md:rounded-full">
+      <header className="glass-bar fixed inset-x-3 top-3 z-40 rounded-[28px] md:rounded-full">
         <div className="mx-auto flex h-[60px] max-w-[76rem] items-center gap-2 pl-4 pr-2 md:h-16 md:pl-5">
           <Logo />
           <nav aria-label="Navigation principale" className="mx-auto hidden items-center gap-1 md:flex">
