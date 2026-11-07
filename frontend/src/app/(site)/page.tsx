@@ -146,7 +146,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.promotions.length > 0 && (
         <section aria-labelledby="promo" className="bg-canvas pt-16 md:pt-24">
           <SectionHead id="promo" title="Promo du jour." href="/promotions" link="Toutes les promos" />
-          <ScrollRow label="Promo du jour">
+          <ScrollRow label="Promo du jour" auto>
             {data.promotions.map((p) => <LineupTile key={p.id} product={p} />)}
           </ScrollRow>
         </section>
@@ -171,7 +171,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.newest.length > 0 && (
         <section aria-labelledby="nouveautes" className="bg-surface pt-16 md:pt-24">
           <SectionHead id="nouveautes" title="Nouveautés." href="/catalogue" link="Tout le catalogue" />
-          <ScrollRow label="Nouveautés">
+          <ScrollRow label="Nouveautés" auto>
             {data.newest.map((p) => (
               <div key={p.id} className="shrink-0 [&_article>div:first-child]:bg-canvas">
                 <LineupTile product={p} />
@@ -184,7 +184,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {data.shops.length > 0 && (
         <section aria-labelledby="boutiques" className="bg-surface py-16 md:py-24">
           <SectionHead id="boutiques" title="Des boutiques validées." href="/boutiques" link="Toutes les boutiques" />
-          <ScrollRow label="Boutiques">
+          <ScrollRow label="Boutiques" auto>
             {data.shops.map((s) => (
               <div key={s.id} className="w-[85vw] max-w-[380px] shrink-0">
                 <ShopCard shop={s} />

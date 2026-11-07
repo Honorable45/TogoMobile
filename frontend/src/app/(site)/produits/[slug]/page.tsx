@@ -251,7 +251,7 @@ export default async function ProductPage({ params }: Props) {
       {similar.length > 0 && (
         <section className="mt-16 md:mt-24">
           <h2 className="display mb-6 text-[26px] sm:text-[36px]">Autres {p.brand.name} disponibles</h2>
-          <ProductRow products={similar} />
+          <ProductRow products={similar} auto label={`Autres ${p.brand.name} disponibles`} />
         </section>
       )}
 
