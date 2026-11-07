@@ -156,11 +156,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <SectionHead id="pourquoi" title={`Pourquoi acheter sur ${brand.name}.`} href="/comment-ca-marche" link="Comment ça marche" />
         <ScrollRow label={`Pourquoi acheter sur ${brand.name}`}>
           {REASONS.map(({ Icon, tone, eyebrow, title, text }) => (
-            <article key={eyebrow} className="flex h-[440px] w-[78vw] max-w-[340px] shrink-0 flex-col rounded-[28px] bg-surface p-8 transition-transform duration-300 hover:scale-[1.01] sm:w-[340px]">
+            <article key={eyebrow} className="flex h-[340px] w-[78vw] max-w-[340px] shrink-0 flex-col rounded-[28px] bg-surface p-7 md:h-[440px] md:p-8 transition-transform duration-300 hover:scale-[1.01] sm:w-[340px]">
               <p className="text-[13px] font-semibold text-ink-2">{eyebrow}</p>
               <h3 className="display mt-2 text-[26px]">{title}</h3>
               <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{text}</p>
-              <span className={`mt-auto flex size-28 items-center justify-center self-center rounded-[32px] ${tone}`}>
+              <span className={`mt-auto flex size-20 items-center justify-center self-center rounded-[26px] md:size-28 md:rounded-[32px] ${tone}`}>
                 <Icon className="size-12" strokeWidth={1.5} aria-hidden />
               </span>
             </article>
