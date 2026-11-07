@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { ROW_PAGE_SIZE } from '@/config/home-content';
 import type { Page, ProductCard as Card } from '@/lib/types';
 import { ProductCard } from '../product/product-card';
 import { LineupTile } from './lineup-tile';
 import { ScrollRow } from './scroll-row';
 
-const PAGE_SIZE = 12;
 /** Garde-fou : au-delà, la rangée ne grandit plus (le navigateur garderait trop de cartes en mémoire). */
 const MAX_ITEMS = 240;
 
@@ -52,7 +52,7 @@ export function EndlessRow({
       let fresh: Card[] = [];
       if (!st.done) {
         st.page += 1;
-        const res = await fetch(`/api/v1/catalog/products?${query}&page=${st.page}&pageSize=${PAGE_SIZE}`);
+        const res = await fetch(`/api/v1/catalog/products?${query}&page=${st.page}&pageSize=${ROW_PAGE_SIZE}`);
         if (res.ok) {
           const data = (await res.json()) as Page<Card>;
           fresh = data.items.filter((p) => !st.ids.has(p.id));
