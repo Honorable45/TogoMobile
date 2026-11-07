@@ -53,7 +53,7 @@ export function SimilarFromSlug() {
   return (
     <section className="mt-12 md:mt-16">
       <h2 className="display mb-6 text-[26px] sm:text-[32px]">{state.title}</h2>
-      <ProductRow products={state.products} auto label={state.title} />
+      <ProductRow products={state.products} label={state.title} />
     </section>
   );
 }

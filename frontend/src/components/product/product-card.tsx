@@ -4,7 +4,7 @@ import { CONDITION_LABELS, formatDate, storageLabel } from '@/lib/format';
 import type { ProductCard as Card } from '@/lib/types';
 import { FavoriteProductButton } from '../favorite-buttons';
 import { Badge, PriceTag, RatingInline } from '../ui/misc';
-import { AutoScrollRow } from './auto-scroll-row';
+import { ScrollRow } from '../home/scroll-row';
 import { CardOrderButton } from './whatsapp-button';
 import { FallbackImg } from './fallback-img';
 
@@ -120,28 +120,17 @@ export function ProductGrid({ products, priorityCount = 0 }: { products: Card[];
 }
 
 /**
- * Rangée défilante horizontalement sur mobile, grille sur grand écran.
- * `auto` : défilement automatique, sur toutes les tailles d'écran.
+ * Rangée de cartes produit qu'on fait glisser au doigt ou avec les flèches, sur tous les écrans.
+ * Rien ne défile tout seul.
  */
-export function ProductRow({ products, auto, label = 'Produits' }: { products: Card[]; auto?: boolean; label?: string }) {
-  if (auto) {
-    return (
-      <AutoScrollRow label={label}>
-        {products.map((p) => (
-          <div key={p.id} className="w-[46%] shrink-0 snap-start sm:w-[38%] md:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
-            <ProductCard product={p} />
-          </div>
-        ))}
-      </AutoScrollRow>
-    );
-  }
+export function ProductRow({ products, label = 'Produits' }: { products: Card[]; label?: string }) {
   return (
-    <div className="scrollbar-none relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 lg:grid-cols-4 lg:gap-5">
+    <ScrollRow label={label} inset>
       {products.map((p) => (
-        <div key={p.id} className="w-[46%] shrink-0 snap-start sm:w-[38%] md:w-auto">
+        <div key={p.id} className="w-[46%] shrink-0 sm:w-[38%] md:w-[calc((100%-2.5rem)/3)] lg:w-[calc((100%-3.75rem)/4)]">
           <ProductCard product={p} />
         </div>
       ))}
-    </div>
+    </ScrollRow>
   );
 }
