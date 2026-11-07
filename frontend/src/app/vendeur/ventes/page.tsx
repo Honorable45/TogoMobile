@@ -13,6 +13,7 @@ import { api, ClientApiError, errorMessage } from '@/lib/api-client';
 import { fcfa, formatDate, formatDateTime, fromLomeInput, SALE_STATUS_LABELS, toLomeInput } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
 import type { Page, SaleStatus } from '@/lib/types';
+import { rules, useFormCheck, type Schema } from '@/lib/validation';
 
 interface Sale {
   id: string;
@@ -102,10 +103,26 @@ function QrDialog({ qr, sale, shopName, onClose }: { qr: Qr; sale: { title: stri
   );
 }
 
+/** Vérifications faites dans le navigateur avant l'envoi (mêmes limites que le serveur). */
+const SALE_RULES: Schema = {
+  productId: [rules.required('Choisissez le téléphone vendu.')],
+  soldAt: [
+    rules.required('Indiquez la date de la vente.'),
+    (v) => (v && new Date(fromLomeInput(v)).getTime() > Date.now() + 60_000 ? 'La date de vente ne peut pas être dans le futur.' : undefined),
+  ],
+  internalRef: [rules.required('Indiquez la référence de la transaction.'), rules.length(2, 40, 'La référence doit contenir entre 2 et 40 caractères.')],
+  buyerPhone: [rules.required('Indiquez le numéro de l’acheteur.'), rules.phone()],
+  amount: [rules.integer(1, 50_000_000, 'Montant invalide (nombre entier de FCFA).')],
+};
+
 function DeclareForm({ products, onCreated, onCancel }: { products: SellerProduct[]; onCreated: (sale: Sale, qr: Qr) => void; onCancel: () => void }) {
   const [state, setState] = useState<{ loading?: boolean; error?: string; errors?: Record<string, string> }>({});
+  const form = useFormCheck(SALE_RULES);
+  // Erreur d'un champ : d'abord celle du navigateur, sinon celle renvoyée par le serveur.
+  const err = (field: string) => form.errors[field] ?? state.errors?.[field];
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!form.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
     setState({ loading: true });
     try {
@@ -124,8 +141,8 @@ function DeclareForm({ products, onCreated, onCancel }: { products: SellerProduc
     }
   };
   return (
-    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
-      <Field label="Téléphone vendu" className="sm:col-span-2" error={state.errors?.productId}>
+    <form onSubmit={submit} onChange={form.onChange} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <Field label="Téléphone vendu" className="sm:col-span-2" error={err('productId')}>
         {(p) => (
           <Select {...p} name="productId" required defaultValue="">
             <option value="" disabled>Choisir…</option>
@@ -133,16 +150,16 @@ function DeclareForm({ products, onCreated, onCancel }: { products: SellerProduc
           </Select>
         )}
       </Field>
-      <Field label="Date de la vente (heure de Lomé)" error={state.errors?.soldAt}>
+      <Field label="Date de la vente (heure de Lomé)" error={err('soldAt')}>
         {(p) => <Input {...p} name="soldAt" type="datetime-local" defaultValue={toLomeInput(new Date())} max={toLomeInput(new Date())} required />}
       </Field>
-      <Field label="Référence de la transaction" error={state.errors?.internalRef} hint="Numéro de reçu ou de facture, propre à votre boutique.">
+      <Field label="Référence de la transaction" error={err('internalRef')} hint="Numéro de reçu ou de facture, propre à votre boutique.">
         {(p) => <Input {...p} name="internalRef" required maxLength={40} placeholder="FAC-2026-0142" />}
       </Field>
-      <Field label="Numéro de l’acheteur" error={state.errors?.buyerPhone} hint="Le client devra le saisir pour confirmer son achat. Il n’est conservé que sous forme chiffrée.">
+      <Field label="Numéro de l’acheteur" error={err('buyerPhone')} hint="Le client devra le saisir pour confirmer son achat. Il n’est conservé que sous forme chiffrée.">
         {(p) => <Input {...p} name="buyerPhone" type="tel" inputMode="tel" required placeholder="90 12 34 56" />}
       </Field>
-      <Field label="Montant convenu (FCFA)" optional error={state.errors?.amount}>
+      <Field label="Montant convenu (FCFA)" optional error={err('amount')}>
         {(p) => <Input {...p} name="amount" inputMode="numeric" pattern="[0-9]*" />}
       </Field>
       {state.error && <div className="sm:col-span-2"><Alert tone="danger">{state.error}</Alert></div>}

@@ -10,6 +10,7 @@ import { Field, Input, Textarea } from '@/components/ui/field';
 import { Alert, Card, Skeleton } from '@/components/ui/misc';
 import { api, ClientApiError, errorMessage } from '@/lib/api-client';
 import { formatDate } from '@/lib/format';
+import { rules, useFormCheck, type Schema } from '@/lib/validation';
 
 const STORE_KEY = 'tm_review_token';
 
@@ -39,12 +40,22 @@ function readToken(): string | null {
   }
 }
 
+/** Vérifications faites dans le navigateur avant l'envoi (mêmes limites que le serveur). */
+const REVIEW_RULES: Schema = {
+  buyerPhone: [rules.required('Indiquez le numéro donné au vendeur lors de l’achat.'), rules.phone()],
+  rating: [rules.required('Choisissez une note de 1 à 5 étoiles.')],
+  comment: [(v) => (v.trim() && (v.trim().length < 10 || v.trim().length > 1000) ? 'Le commentaire doit contenir entre 10 et 1 000 caractères.' : undefined)],
+};
+
 export default function ReviewPage() {
   const { user, loading: sessionLoading } = useSession();
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [check, setCheck] = useState<Check | null>(null);
   const [checkError, setCheckError] = useState<string>();
   const [rating, setRating] = useState(0);
+  const form = useFormCheck(REVIEW_RULES);
+  // Erreur d'un champ : d'abord celle du navigateur, sinon celle renvoyée par le serveur.
+  const err = (field: string) => form.errors[field] ?? submit.errors?.[field];
   const [submit, setSubmit] = useState<{ loading?: boolean; error?: string; errors?: Record<string, string>; done?: string; locked?: boolean }>({});
 
   useEffect(() => {
@@ -68,7 +79,7 @@ export default function ReviewPage() {
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!rating) return setSubmit({ errors: { rating: 'Choisissez une note de 1 à 5 étoiles.' } });
+    if (!form.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
     setSubmit({ loading: true });
     try {
@@ -165,10 +176,10 @@ export default function ReviewPage() {
         </Card>
       ) : (
         <Card className="rounded-3xl p-6">
-          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+          <form onSubmit={onSubmit} onChange={form.onChange} className="space-y-5" noValidate>
             <Field
               label="Votre numéro de téléphone"
-              error={submit.errors?.buyerPhone}
+              error={err('buyerPhone')}
               hint="Le numéro que vous avez donné au vendeur lors de l’achat. Il sert uniquement à confirmer que vous êtes bien l’acheteur et n’est pas publié."
             >
               {(p) => <Input {...p} name="buyerPhone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="90 12 34 56" />}
@@ -185,10 +196,10 @@ export default function ReviewPage() {
                 ))}
                 <span className="ml-2 text-sm font-semibold text-muted" aria-live="polite">{RATING_WORDS[rating]}</span>
               </div>
-              {submit.errors?.rating && <p className="mt-1 text-sm text-danger" role="alert">{submit.errors.rating}</p>}
+              {err('rating') && <p className="mt-1 text-sm text-danger" role="alert">{err('rating')}</p>}
             </fieldset>
 
-            <Field label="Votre commentaire" optional error={submit.errors?.comment} hint="10 à 1 000 caractères. Décrivez l’appareil et le service ; n’indiquez pas de numéro de téléphone ni de lien.">
+            <Field label="Votre commentaire" optional error={err('comment')} hint="10 à 1 000 caractères. Décrivez l’appareil et le service ; n’indiquez pas de numéro de téléphone ni de lien.">
               {(p) => <Textarea {...p} name="comment" rows={4} maxLength={1000} />}
             </Field>
 

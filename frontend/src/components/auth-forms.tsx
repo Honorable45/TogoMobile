@@ -10,6 +10,7 @@ import type { Me } from '@/lib/types';
 import { Button } from './ui/button';
 import { Field, Input } from './ui/field';
 import { Alert } from './ui/misc';
+import { rules, useFormCheck, type Schema } from '@/lib/validation';
 import { PageBanner } from './layout/page-banner';
 
 /** N'accepte que des redirections internes (évite les redirections ouvertes). */
@@ -49,6 +50,23 @@ function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// Règles vérifiées dans le navigateur avant l'envoi (les mêmes que celles du serveur).
+const LOGIN_RULES: Schema = {
+  identifier: [rules.required('Indiquez votre e-mail ou votre numéro de téléphone.')],
+  password: [rules.required('Indiquez votre mot de passe.')],
+};
+const REGISTER_RULES: Schema = {
+  name: [rules.required('Indiquez votre nom.'), rules.length(2, 80, 'Le nom doit contenir entre 2 et 80 caractères.')],
+  contact: [rules.emailOrPhone()],
+  password: [rules.password()],
+  terms: [rules.checked('Vous devez accepter les conditions d’utilisation.')],
+};
+const FORGOT_RULES: Schema = { email: [rules.required('Indiquez votre adresse e-mail.'), rules.email()] };
+const RESET_RULES: Schema = {
+  password: [rules.password()],
+  confirm: [rules.sameAs('password', 'Les deux mots de passe ne correspondent pas.')],
+};
+
 function redirectAfterAuth(me: Me, next: string | null) {
   if (next) return safeNext(next);
   // L'administration est une application distincte (son propre domaine, donc sa propre connexion).
@@ -62,9 +80,11 @@ export function LoginForm() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const next = params.get('next');
+  const form = useFormCheck(LOGIN_RULES);
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!form.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
     setLoading(true);
     setError(undefined);
@@ -91,11 +111,13 @@ export function LoginForm() {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <Field label="E-mail ou numéro de téléphone">
+      <form onSubmit={submit} onChange={form.onChange} className="space-y-4" noValidate>
+        <Field label="E-mail ou numéro de téléphone" error={form.errors.identifier}>
           {(p) => <Input {...p} name="identifier" autoComplete="username" required placeholder="vous@exemple.com ou 90 12 34 56" />}
         </Field>
-        <Field label="Mot de passe">{(p) => <PasswordInput {...p} name="password" autoComplete="current-password" required />}</Field>
+        <Field label="Mot de passe" error={form.errors.password}>
+          {(p) => <PasswordInput {...p} name="password" autoComplete="current-password" required />}
+        </Field>
         {error && <Alert tone="danger">{error}</Alert>}
         <Button type="submit" loading={loading} className="w-full" size="lg">
           Se connecter
@@ -112,24 +134,18 @@ export function LoginForm() {
 
 export function RegisterForm() {
   const params = useSearchParams();
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const next = params.get('next');
+  const form = useFormCheck(REGISTER_RULES);
+  const { errors, setErrors } = form;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!form.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
-    if (!fd.get('terms')) {
-      setErrors({ terms: 'Vous devez accepter les conditions d’utilisation.' });
-      return;
-    }
     // Un seul champ « e-mail ou téléphone », comme à la connexion : l'arobase fait la différence.
     const contact = String(fd.get('contact') ?? '').trim();
-    if (!contact) {
-      setErrors({ contact: 'Indiquez votre e-mail ou votre numéro de téléphone.' });
-      return;
-    }
     const isEmail = contact.includes('@');
     setLoading(true);
     setErrors({});
@@ -167,7 +183,7 @@ export function RegisterForm() {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4" noValidate>
+      <form onSubmit={submit} onChange={form.onChange} className="space-y-4" noValidate>
         <Field label="Nom complet" error={errors.name}>
           {(p) => <Input {...p} name="name" autoComplete="name" required minLength={2} maxLength={80} />}
         </Field>
@@ -205,6 +221,7 @@ export function ForgotForm() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const form = useFormCheck(FORGOT_RULES);
   return (
     <AuthCard title="Mot de passe oublié" subtitle="Indiquez l’adresse e-mail de votre compte : nous vous enverrons un lien de réinitialisation valable une heure." footer={<Link href="/connexion" className="hover:underline">Retour à la connexion</Link>}>
       {done ? (
@@ -214,8 +231,11 @@ export function ForgotForm() {
       ) : (
         <form
           className="space-y-4"
+          noValidate
+          onChange={form.onChange}
           onSubmit={async (e) => {
             e.preventDefault();
+            if (!form.check(e.currentTarget)) return;
             setLoading(true);
             setError(undefined);
             try {
@@ -228,7 +248,9 @@ export function ForgotForm() {
             }
           }}
         >
-          <Field label="Adresse e-mail">{(p) => <Input {...p} name="email" type="email" required autoComplete="email" />}</Field>
+          <Field label="Adresse e-mail" error={form.errors.email}>
+            {(p) => <Input {...p} name="email" type="email" required autoComplete="email" />}
+          </Field>
           {error && <Alert tone="danger">{error}</Alert>}
           <Button type="submit" loading={loading} className="w-full" size="lg">
             Envoyer le lien
@@ -245,6 +267,7 @@ export function ResetForm() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const form = useFormCheck(RESET_RULES);
   return (
     <AuthCard title="Nouveau mot de passe">
       {done ? (
@@ -256,10 +279,12 @@ export function ResetForm() {
       ) : (
         <form
           className="space-y-4"
+          noValidate
+          onChange={form.onChange}
           onSubmit={async (e) => {
             e.preventDefault();
+            if (!form.check(e.currentTarget)) return;
             const fd = new FormData(e.currentTarget);
-            if (fd.get('password') !== fd.get('confirm')) return setError('Les deux mots de passe ne correspondent pas.');
             setLoading(true);
             setError(undefined);
             try {
@@ -272,10 +297,12 @@ export function ResetForm() {
             }
           }}
         >
-          <Field label="Nouveau mot de passe" hint="8 caractères minimum, dont une lettre et un chiffre.">
+          <Field label="Nouveau mot de passe" hint="8 caractères minimum, dont une lettre et un chiffre." error={form.errors.password}>
             {(p) => <PasswordInput {...p} name="password" autoComplete="new-password" required />}
           </Field>
-          <Field label="Confirmez le mot de passe">{(p) => <PasswordInput {...p} name="confirm" autoComplete="new-password" required />}</Field>
+          <Field label="Confirmez le mot de passe" error={form.errors.confirm}>
+            {(p) => <PasswordInput {...p} name="confirm" autoComplete="new-password" required />}
+          </Field>
           {error && <Alert tone="danger">{error}</Alert>}
           <Button type="submit" loading={loading} className="w-full" size="lg">
             Enregistrer

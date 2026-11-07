@@ -66,8 +66,30 @@ function PromotionForm({ products, editing, onDone }: { products: SellerProduct[
   const price = Number(promoPrice);
   const pct = reference && price > 0 && price < reference ? Math.floor(((reference - price) / reference) * 100) : null;
 
+  /** Vérifications avant l'envoi (le serveur refait les mêmes) : renvoie les erreurs par champ. */
+  const check = () => {
+    const errors: Record<string, string> = {};
+    if (!editing && !productId) errors.productId = 'Choisissez le téléphone à mettre en promotion.';
+    if (!Number.isInteger(price) || price < 1) errors.promoPrice = 'Indiquez un prix promotionnel en FCFA.';
+    else if (reference && price >= reference) errors.promoPrice = `Le prix promotionnel doit être inférieur au prix habituel (${reference.toLocaleString('fr-FR')} FCFA).`;
+    else if (reference && Math.floor(((reference - price) / reference) * 100) < 1) errors.promoPrice = 'La réduction doit être d’au moins 1 %.';
+    const start = startsAt ? new Date(fromLomeInput(startsAt)).getTime() : NaN;
+    const end = endsAt ? new Date(fromLomeInput(endsAt)).getTime() : NaN;
+    if (Number.isNaN(start)) errors.startsAt = 'Indiquez la date de début.';
+    // Pas d'antidatage (5 minutes de tolérance pour les horloges décalées), comme côté serveur.
+    else if (!editing && start < Date.now() - 5 * 60_000) errors.startsAt = 'La date de début ne peut pas être dans le passé.';
+    if (Number.isNaN(end)) errors.endsAt = 'Indiquez la date de fin.';
+    else if (end <= Date.now()) errors.endsAt = 'La fin doit être dans le futur.';
+    else if (!Number.isNaN(start) && end <= start) errors.endsAt = 'La fin doit être après le début.';
+    else if (!Number.isNaN(start) && end - start > 24 * 3_600_000) errors.endsAt = 'Une promo du jour dure 24 heures au maximum.';
+    if (conditions.trim().length > 300) errors.conditions = '300 caractères au maximum.';
+    return errors;
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    const errors = check();
+    if (Object.keys(errors).length) return setState({ error: Object.values(errors)[0], errors });
     setState({ loading: true });
     try {
       const body = { promoPrice: price, startsAt: fromLomeInput(startsAt), endsAt: fromLomeInput(endsAt), conditions: conditions.trim() || null };
