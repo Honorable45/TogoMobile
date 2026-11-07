@@ -280,7 +280,7 @@ def whatsapp(product_id: str):
     )
     question = 'Est-il toujours disponible ?' if p.availability == 'AVAILABLE' else 'Pouvez-vous me dire quand il sera de nouveau disponible ?'
     message = '\n'.join([
-        f'Bonjour {p.shop.name}, je suis intéressé(e) par ce téléphone vu sur TogoMobile :',
+        f'Bonjour {p.shop.name}, je suis intéressé(e) par ce téléphone vu sur bonplan :',
         p.title,
         f'Référence : {p.reference}',
         price_line,

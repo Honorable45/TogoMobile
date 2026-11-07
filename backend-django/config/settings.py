@@ -52,7 +52,7 @@ SECURITY = {
 }
 MAIL = {
     'driver': env('MAIL_DRIVER', 'console'),
-    'from': env('MAIL_FROM', 'TogoMobile <no-reply@example.com>'),
+    'from': env('MAIL_FROM', 'bonplan <no-reply@example.com>'),
     'resend_api_key': env('RESEND_API_KEY', ''),
 }
 if not DEBUG and MAIL['driver'] == 'console':

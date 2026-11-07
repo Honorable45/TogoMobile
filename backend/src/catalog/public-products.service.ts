@@ -126,7 +126,7 @@ export class PublicProductsService {
     const question =
       p.availability === 'AVAILABLE' ? 'Est-il toujours disponible ?' : 'Pouvez-vous me dire quand il sera de nouveau disponible ?';
     const message = [
-      `Bonjour ${p.shop.name}, je suis intéressé(e) par ce téléphone vu sur TogoMobile :`,
+      `Bonjour ${p.shop.name}, je suis intéressé(e) par ce téléphone vu sur bonplan :`,
       `${p.title}`,
       `Référence : ${p.reference}`,
       priceLine,

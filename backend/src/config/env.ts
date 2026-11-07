@@ -150,7 +150,7 @@ function loadEnv() {
 
     mail: {
       driver: str('MAIL_DRIVER', 'console') as MailDriver,
-      from: str('MAIL_FROM', 'TogoMobile <no-reply@example.com>'),
+      from: str('MAIL_FROM', 'bonplan <no-reply@example.com>'),
       resendApiKey: process.env.RESEND_API_KEY || '',
     },
 
