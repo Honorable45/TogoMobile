@@ -12,7 +12,7 @@ import { useDismiss } from './use-dismiss';
 /** Barre d'onglets fixée en bas de l'écran sur mobile : Accueil, Boutiques, Promo du jour, Compte. */
 export function BottomNav() {
   const pathname = usePathname();
-  const { user, loading } = useSession();
+  const { user } = useSession();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const ref = useDismiss(open, close);
@@ -50,7 +50,6 @@ export function BottomNav() {
           <Link
             href="/connexion"
             aria-current={accountActive ? 'page' : undefined}
-            aria-disabled={loading || undefined}
             className={tab(accountActive)}
           >
             <UserRound className="size-[22px]" aria-hidden />
