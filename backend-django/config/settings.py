@@ -28,6 +28,33 @@ ALLOWED_HOSTS = [h.strip() for h in env('DJANGO_ALLOWED_HOSTS', 'localhost,127.0
 API_URL = env('API_URL', 'http://localhost:4000').rstrip('/')
 WEB_URL = env('WEB_URL', 'http://localhost:3000').rstrip('/')
 PAGINATION_MAX_OFFSET = int(env('PAGINATION_MAX_OFFSET', '5000'))
+CORS_ORIGINS = [o.strip() for o in env('CORS_ORIGINS', 'http://localhost:3000').split(',') if o.strip()]
+if env('ADMIN_URL'):
+    CORS_ORIGINS.append(env('ADMIN_URL'))
+
+# Secret partagé avec l'API Node (HMAC des numéros d'acheteurs) : même valeur obligatoire.
+APP_SECRET = env('APP_SECRET') or ('dev-only-secret-change-me-dev-only-secret' if DEBUG else None)
+if not APP_SECRET:
+    raise RuntimeError('APP_SECRET est obligatoire hors mode développement.')
+
+# Sessions : mêmes réglages et même cookie que l'API Node (une session ouverte d'un côté vaut de l'autre).
+SESSION = {
+    'cookie_name': env('SESSION_COOKIE_NAME', 'tm_session'),
+    'domain': env('SESSION_COOKIE_DOMAIN') or None,
+    'same_site': env('SESSION_COOKIE_SAMESITE', 'lax'),
+    'days': int(env('SESSION_DAYS', '30')),
+}
+SECURITY = {
+    'login_max_failures': int(env('LOGIN_MAX_FAILURES', '8')),
+    'login_lock_minutes': int(env('LOGIN_LOCK_MINUTES', '15')),
+}
+MAIL = {
+    'driver': env('MAIL_DRIVER', 'console'),
+    'from': env('MAIL_FROM', 'TogoMobile <no-reply@example.com>'),
+    'resend_api_key': env('RESEND_API_KEY', ''),
+}
+if not DEBUG and MAIL['driver'] == 'console':
+    raise RuntimeError('MAIL_DRIVER=console est interdit en production : configurez MAIL_DRIVER=resend.')
 
 STORAGE = {
     'driver': env('STORAGE_DRIVER', 'local'),
@@ -43,11 +70,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'core',
     'catalog',
+    'accounts',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'core.middleware.OriginCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -72,11 +101,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
     'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['core.auth.CookieSessionAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': [],
     'UNAUTHENTICATED_USER': None,
     'EXCEPTION_HANDLER': 'core.errors.handle',
-    'DEFAULT_THROTTLE_RATES': {'whatsapp': '20/min', 'view': '60/min'},
+    'DEFAULT_THROTTLE_RATES': {
+        'whatsapp': '20/min',
+        'view': '60/min',
+        'register': '5/min',
+        'login': '10/min',
+        'password_change': '5/min',
+        'password_forgot': '3/min',
+        'password_reset': '5/min',
+    },
 }
 
 # Limitation de débit : mémoire locale par défaut (un processus) ; REDIS_URL pour plusieurs instances.

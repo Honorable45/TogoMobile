@@ -4,6 +4,7 @@ Usage : python scripts/compare_api.py [http://localhost:4000] [http://localhost:
 """
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -12,12 +13,20 @@ NODE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:4000'
 DJANGO = sys.argv[2] if len(sys.argv) > 2 else 'http://localhost:8000'
 
 
+# Si les deux API n'annoncent pas la même adresse publique pour les fichiers (API_URL différente),
+# MEDIA_ALIAS=http://10.42.0.1:4000=http://localhost:4000 ramène les URL Django à celles de Node.
+ALIAS = os.environ.get('MEDIA_ALIAS', '').split('=', 1) if os.environ.get('MEDIA_ALIAS') else None
+
+
 def get(base, path):
     try:
         with urllib.request.urlopen(f'{base}/api/v1{path}', timeout=30) as r:
-            return r.status, json.loads(r.read() or 'null')
+            status, raw = r.status, r.read().decode()
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read() or 'null')
+        status, raw = e.code, e.read().decode()
+    if ALIAS and base == DJANGO:
+        raw = raw.replace(ALIAS[0], ALIAS[1])
+    return status, json.loads(raw or 'null')
 
 
 def diff(a, b, path=''):

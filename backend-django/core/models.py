@@ -8,10 +8,25 @@ ce qui permet aux deux API de fonctionner sur la même base pendant la migration
 Montants : entiers en FCFA. Dates : timestamptz (UTC).
 """
 
+from datetime import UTC
+
 from django.db import models
 from django.utils import timezone
 
 from .ids import cuid
+
+
+class UTCDateTimeField(models.DateTimeField):
+    """
+    Les colonnes DateTime de Prisma sont des « timestamp without time zone » qui contiennent de l'UTC.
+    Relues ici comme des dates UTC, quel que soit le fuseau du serveur ; l'écriture se fait en UTC
+    (Django fixe le fuseau de la connexion PostgreSQL à UTC).
+    """
+
+    def from_db_value(self, value, expression, connection):
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value
 
 
 class Choices:
@@ -64,11 +79,11 @@ def Id():
 
 
 def Created():
-    return models.DateTimeField(db_column='createdAt', default=timezone.now)
+    return UTCDateTimeField(db_column='createdAt', default=timezone.now)
 
 
 def Updated():
-    return models.DateTimeField(db_column='updatedAt', auto_now=True)
+    return UTCDateTimeField(db_column='updatedAt', auto_now=True)
 
 
 def Fk(to, column, on_delete=models.CASCADE, null=False, related_name='+'):
@@ -94,7 +109,7 @@ class User(Base):
     status = models.TextField(choices=Choices.USER_STATUS, default='ACTIVE')
     is_demo = models.BooleanField(db_column='isDemo', default=False)
     failed_login_count = models.IntegerField(db_column='failedLoginCount', default=0)
-    locked_until = models.DateTimeField(db_column='lockedUntil', null=True)
+    locked_until = UTCDateTimeField(db_column='lockedUntil', null=True)
     created_at = Created()
     updated_at = Updated()
 
@@ -111,9 +126,9 @@ class Session(Base):
     token_hash = models.TextField(db_column='tokenHash', unique=True)
     user_agent = models.TextField(db_column='userAgent', null=True)
     created_at = Created()
-    last_used_at = models.DateTimeField(db_column='lastUsedAt', default=timezone.now)
-    expires_at = models.DateTimeField(db_column='expiresAt')
-    revoked_at = models.DateTimeField(db_column='revokedAt', null=True)
+    last_used_at = UTCDateTimeField(db_column='lastUsedAt', default=timezone.now)
+    expires_at = UTCDateTimeField(db_column='expiresAt')
+    revoked_at = UTCDateTimeField(db_column='revokedAt', null=True)
 
     class Meta(Base.Meta):
         db_table = 'Session'
@@ -123,8 +138,8 @@ class PasswordResetToken(Base):
     id = Id()
     user = Fk(User, 'userId')
     token_hash = models.TextField(db_column='tokenHash', unique=True)
-    expires_at = models.DateTimeField(db_column='expiresAt')
-    used_at = models.DateTimeField(db_column='usedAt', null=True)
+    expires_at = UTCDateTimeField(db_column='expiresAt')
+    used_at = UTCDateTimeField(db_column='usedAt', null=True)
     created_at = Created()
 
     class Meta(Base.Meta):
@@ -150,8 +165,8 @@ class Shop(Base):
     opening_hours = models.TextField(db_column='openingHours', null=True)
     status = models.TextField(choices=Choices.SHOP_STATUS, default='PENDING')
     status_reason = models.TextField(db_column='statusReason', null=True)
-    validated_at = models.DateTimeField(db_column='validatedAt', null=True)
-    identity_verified_at = models.DateTimeField(db_column='identityVerifiedAt', null=True)
+    validated_at = UTCDateTimeField(db_column='validatedAt', null=True)
+    identity_verified_at = UTCDateTimeField(db_column='identityVerifiedAt', null=True)
     trusted_seller = models.BooleanField(db_column='trustedSeller', default=False)
     pending_changes = models.JSONField(db_column='pendingChanges', null=True)
     rating_avg = models.FloatField(db_column='ratingAvg', default=0)
@@ -232,9 +247,9 @@ class Product(Base):
     status = models.TextField(choices=Choices.PUBLICATION, default='DRAFT')
     moderation = models.TextField(choices=Choices.MODERATION, default='PENDING')
     moderation_note = models.TextField(db_column='moderationNote', null=True)
-    moderated_at = models.DateTimeField(db_column='moderatedAt', null=True)
-    published_at = models.DateTimeField(db_column='publishedAt', null=True)
-    removed_at = models.DateTimeField(db_column='removedAt', null=True)
+    moderated_at = UTCDateTimeField(db_column='moderatedAt', null=True)
+    published_at = UTCDateTimeField(db_column='publishedAt', null=True)
+    removed_at = UTCDateTimeField(db_column='removedAt', null=True)
     removal_reason = models.TextField(db_column='removalReason', null=True)
     search_text = models.TextField(db_column='searchText', default='')
     rating_avg = models.FloatField(db_column='ratingAvg', default=0)
@@ -290,7 +305,7 @@ class MediaUpload(Base):
     size = models.IntegerField()
     token_hash = models.TextField(db_column='tokenHash', null=True, unique=True)
     status = models.TextField(choices=Choices.UPLOAD_STATUS, default='PENDING')
-    expires_at = models.DateTimeField(db_column='expiresAt')
+    expires_at = UTCDateTimeField(db_column='expiresAt')
     created_at = Created()
 
     class Meta(Base.Meta):
@@ -306,8 +321,8 @@ class Job(Base):
     status = models.TextField(choices=Choices.JOB_STATUS, default='PENDING')
     attempts = models.IntegerField(default=0)
     max_attempts = models.IntegerField(db_column='maxAttempts', default=5)
-    run_at = models.DateTimeField(db_column='runAt', default=timezone.now)
-    locked_at = models.DateTimeField(db_column='lockedAt', null=True)
+    run_at = UTCDateTimeField(db_column='runAt', default=timezone.now)
+    locked_at = UTCDateTimeField(db_column='lockedAt', null=True)
     locked_by = models.TextField(db_column='lockedBy', null=True)
     last_error = models.TextField(db_column='lastError', null=True)
     created_at = Created()
@@ -329,8 +344,8 @@ class HeroAd(Base):
     mobile_image_key = models.TextField(db_column='mobileImageKey')
     width = models.IntegerField()
     height = models.IntegerField()
-    starts_at = models.DateTimeField(db_column='startsAt', null=True)
-    ends_at = models.DateTimeField(db_column='endsAt', null=True)
+    starts_at = UTCDateTimeField(db_column='startsAt', null=True)
+    ends_at = UTCDateTimeField(db_column='endsAt', null=True)
     is_active = models.BooleanField(db_column='isActive', default=True)
     sort_order = models.IntegerField(db_column='sortOrder', default=0)
     created_by_id = models.TextField(db_column='createdById')
@@ -384,8 +399,8 @@ class Promotion(Base):
     shop = Fk(Shop, 'shopId', related_name='promotions')
     promo_price = models.IntegerField(db_column='promoPrice')
     reference_price = models.IntegerField(db_column='referencePrice')
-    starts_at = models.DateTimeField(db_column='startsAt')
-    ends_at = models.DateTimeField(db_column='endsAt')
+    starts_at = UTCDateTimeField(db_column='startsAt')
+    ends_at = UTCDateTimeField(db_column='endsAt')
     status = models.TextField(choices=Choices.PROMOTION_STATUS, default='ACTIVE')
     conditions = models.TextField(null=True)
     status_reason = models.TextField(db_column='statusReason', null=True)
@@ -441,15 +456,15 @@ class Sale(Base):
     product = Fk(Product, 'productId', models.PROTECT)
     declared_by = Fk(User, 'declaredById', models.PROTECT)
     internal_ref = models.TextField(db_column='internalRef')
-    sold_at = models.DateTimeField(db_column='soldAt')
+    sold_at = UTCDateTimeField(db_column='soldAt')
     amount = models.IntegerField(null=True)
     buyer_phone_hash = models.TextField(db_column='buyerPhoneHash', null=True)
     buyer_phone_hint = models.TextField(db_column='buyerPhoneHint', null=True)
     buyer = Fk(User, 'buyerId', models.SET_NULL, null=True)
     status = models.TextField(choices=Choices.SALE_STATUS, default='DECLARED')
     flags = models.JSONField(default=list)
-    confirmed_at = models.DateTimeField(db_column='confirmedAt', null=True)
-    verified_at = models.DateTimeField(db_column='verifiedAt', null=True)
+    confirmed_at = UTCDateTimeField(db_column='confirmedAt', null=True)
+    verified_at = UTCDateTimeField(db_column='verifiedAt', null=True)
     status_note = models.TextField(db_column='statusNote', null=True)
     is_demo = models.BooleanField(db_column='isDemo', default=False)
     created_at = Created()
@@ -464,9 +479,9 @@ class ReviewToken(Base):
     sale = Fk(Sale, 'saleId', related_name='tokens')
     token_hash = models.TextField(db_column='tokenHash', unique=True)
     status = models.TextField(choices=Choices.REVIEW_TOKEN_STATUS, default='ACTIVE')
-    expires_at = models.DateTimeField(db_column='expiresAt')
-    used_at = models.DateTimeField(db_column='usedAt', null=True)
-    revoked_at = models.DateTimeField(db_column='revokedAt', null=True)
+    expires_at = UTCDateTimeField(db_column='expiresAt')
+    used_at = UTCDateTimeField(db_column='usedAt', null=True)
+    revoked_at = UTCDateTimeField(db_column='revokedAt', null=True)
     revoke_reason = models.TextField(db_column='revokeReason', null=True)
     failed_attempts = models.IntegerField(db_column='failedAttempts', default=0)
     created_at = Created()
@@ -488,7 +503,7 @@ class Review(Base):
     verification = models.TextField(choices=Choices.REVIEW_VERIFICATION, default='PENDING')
     moderation_note = models.TextField(db_column='moderationNote', null=True)
     moderated_by = Fk(User, 'moderatedById', models.SET_NULL, null=True)
-    moderated_at = models.DateTimeField(db_column='moderatedAt', null=True)
+    moderated_at = UTCDateTimeField(db_column='moderatedAt', null=True)
     is_demo = models.BooleanField(db_column='isDemo', default=False)
     created_at = Created()
     updated_at = Updated()
@@ -510,7 +525,7 @@ class Report(Base):
     status = models.TextField(choices=Choices.REPORT_STATUS, default='OPEN')
     decision = models.TextField(null=True)
     handled_by = Fk(User, 'handledById', models.SET_NULL, null=True)
-    handled_at = models.DateTimeField(db_column='handledAt', null=True)
+    handled_at = UTCDateTimeField(db_column='handledAt', null=True)
     created_at = Created()
 
     class Meta(Base.Meta):

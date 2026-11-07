@@ -2,8 +2,8 @@
 
 import logging
 
+from rest_framework.exceptions import Throttled
 from rest_framework.response import Response
-from rest_framework.views import exception_handler
 
 log = logging.getLogger('api')
 
@@ -22,6 +22,10 @@ def handle(exc, context):
         if exc.code:
             body['code'] = exc.code
         return Response(body, status=exc.status)
+    if isinstance(exc, Throttled):
+        return Response({'statusCode': 429, 'message': 'Trop de tentatives. Patientez une minute puis réessayez.'}, status=429)
+    from rest_framework.views import exception_handler  # import tardif : évite une boucle avec l'authentification
+
     res = exception_handler(exc, context)
     if res is not None:
         detail = res.data.get('detail') if isinstance(res.data, dict) else None
