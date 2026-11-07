@@ -5,6 +5,8 @@ import type { NextConfig } from 'next';
  * Les cookies de session restent ainsi « first-party », même si l'API est hébergée ailleurs (Render…).
  */
 const API_URL = (process.env.API_URL || 'http://localhost:4000').replace(/\/$/, '');
+/** Serveur des photos en stockage local (développement), ex. http://localhost:4000. Vide = pas de relais. */
+const MEDIA_ORIGIN = (process.env.MEDIA_ORIGIN || '').replace(/\/$/, '');
 /** L'administration est une application séparée (dossier admin/) : les anciennes adresses /admin y renvoient. */
 const ADMIN_URL = (process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001').replace(/\/$/, '');
 
@@ -20,7 +22,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [{ source: '/api/v1/:path*', destination: `${API_URL}/api/v1/:path*` }];
+    return [
+      { source: '/api/v1/:path*', destination: `${API_URL}/api/v1/:path*` },
+      // Développement : photos en adresses relatives (/media/…), relayées vers le serveur qui les stocke.
+      ...(MEDIA_ORIGIN ? [{ source: '/media/:path*', destination: `${MEDIA_ORIGIN}/media/:path*` }] : []),
+    ];
   },
   async headers() {
     return [
