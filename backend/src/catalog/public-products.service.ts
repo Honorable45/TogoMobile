@@ -89,6 +89,8 @@ export class PublicProductsService {
         productCount,
         validatedAt: p.shop.validatedAt,
         identityVerified: !!p.shop.identityVerifiedAt,
+        /** Numéro à appeler : téléphone de la boutique, sinon son numéro WhatsApp (déjà publics sur sa page). */
+        phone: p.shop.phone || p.shop.whatsapp,
       },
     };
   }

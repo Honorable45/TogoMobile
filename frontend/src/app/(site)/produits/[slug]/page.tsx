@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { BadgeCheck, CalendarClock, ChevronRight, MapPin, PackageCheck, ShieldAlert, Store, Wrench } from 'lucide-react';
+import { BadgeCheck, CalendarClock, ChevronRight, MapPin, PackageCheck, Phone, ShieldAlert, Store, Wrench } from 'lucide-react';
 import { FavoriteProductButton } from '@/components/favorite-buttons';
 import { Gallery } from '@/components/product/gallery';
 import { ProductRow } from '@/components/product/product-card';
@@ -147,8 +147,22 @@ export default async function ProductPage({ params }: Props) {
               Consultez les autres annonces de la boutique ou des téléphones similaires.
             </Alert>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-              <WhatsAppOrderButton productId={p.id} orderable={p.orderable} />
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <div className="min-w-0 flex-1">
+                  <WhatsAppOrderButton productId={p.id} orderable={p.orderable} />
+                </div>
+                {p.shop.phone && (
+                  <a
+                    href={`tel:${p.shop.phone.replace(/[^\d+]/g, '')}`}
+                    aria-label={`Appeler ${p.shop.name}`}
+                    className="glass-dark inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-full px-5 text-base font-medium text-white transition-transform duration-200 hover:-translate-y-0.5 active:scale-[.98]"
+                  >
+                    <Phone className="size-5" aria-hidden />
+                    Appeler
+                  </a>
+                )}
+              </div>
               <FavoriteProductButton productId={p.id} title={p.title} variant="full" />
             </div>
           )}
@@ -242,17 +256,6 @@ export default async function ProductPage({ params }: Props) {
         <ReportButton targetType="PRODUCT" targetId={p.id} label="Signaler cette annonce" />
       </div>
 
-      {p.availability !== 'WITHDRAWN' && (
-        <div className="glass-light fixed inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 rounded-[28px] py-2 pl-4 pr-2 sm:hidden">
-          <div className="min-w-0">
-            <p className="num text-base font-semibold leading-tight text-brand-600">{fcfa(p.currentPrice)}</p>
-            {p.promotion && <p className="text-xs text-muted line-through">{fcfa(p.promotion.referencePrice)}</p>}
-          </div>
-          <div className="flex-1">
-            <WhatsAppOrderButton productId={p.id} orderable={p.orderable} />
-          </div>
-        </div>
-      )}
     </div>
     </>
   );

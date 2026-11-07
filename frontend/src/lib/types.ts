@@ -109,6 +109,7 @@ export interface ProductDetail extends Omit<ProductCard, 'shop' | 'image'> {
     productCount: number;
     validatedAt: string | null;
     identityVerified: boolean;
+    phone?: string | null;
   };
 }
 
