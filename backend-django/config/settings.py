@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     'core',
     'catalog',
     'accounts',
+    'shops',
+    'favorites',
 ]
 
 MIDDLEWARE = [
@@ -107,7 +109,10 @@ DATABASES = {
     'default': dj_database_url.parse(
         # Prisma accepte ?schema=public et ?connection_limit= : paramètres inconnus de psycopg, retirés ici.
         (env('DATABASE_URL') or '').split('?')[0],
-        conn_max_age=int(env('DB_CONN_MAX_AGE', '60')),
+        # Connexions persistantes : utiles avec gunicorn (quelques processus fixes). Le serveur de
+        # développement ouvre un fil par requête : chacun garderait sa connexion ouverte et
+        # PostgreSQL saturerait (« remaining connection slots are reserved »). D'où 0 en DEBUG.
+        conn_max_age=int(env('DB_CONN_MAX_AGE', '0' if DEBUG else '60')),
         conn_health_checks=True,
     )
 }

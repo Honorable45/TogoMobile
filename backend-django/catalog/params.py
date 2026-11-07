@@ -24,15 +24,36 @@ def _int(errors, name, value, lo=None, hi=None, number=int):
     return n
 
 
-def page_query(qp, errors=None):
+def reject_unknown(qp, allowed, errors):
+    """Comme le ValidationPipe Node (forbidNonWhitelisted) : tout paramètre inconnu est refusé."""
+    for key in qp.keys():
+        if key not in allowed:
+            errors[key] = 'Champ non autorisé.'
+
+
+def fail(errors):
+    # Comme l'API Node : le premier problème en message, le détail par champ dans « errors ».
+    if errors:
+        raise ApiError(400, next(iter(errors.values())), errors)
+
+
+PAGE_FIELDS = {'page', 'pageSize'}
+CATALOG_FIELDS = PAGE_FIELDS | {
+    'q', 'brand', 'category', 'shop', 'minPrice', 'maxPrice', 'condition', 'storage', 'ram', 'available', 'promo', 'minRating', 'sort',
+}
+
+
+def page_query(qp, errors=None, allowed=PAGE_FIELDS):
     errors = {} if errors is None else errors
+    if allowed is not None:
+        reject_unknown(qp, allowed, errors)
     page = _int(errors, 'page', qp.get('page'), 1, 1000) or 1
     size = _int(errors, 'pageSize', qp.get('pageSize'), 1, 60) or 24
     return page, size, errors
 
 
 def catalog_query(qp):
-    page, size, errors = page_query(qp)
+    page, size, errors = page_query(qp, allowed=CATALOG_FIELDS)
     q = (qp.get('q') or '').strip() or None
     if q and len(q) > 100:
         errors['q'] = 'q doit faire au plus 100 caractères.'
@@ -73,3 +94,21 @@ def catalog_query(qp):
         # Comme l'API Node : le premier problème en message, le détail par champ dans « errors ».
         raise ApiError(400, next(iter(errors.values())), errors)
     return result
+
+
+SHOP_SORTS = ('recent', 'rating', 'name')
+
+
+def shop_list_query(qp):
+    page, size, errors = page_query(qp, allowed=PAGE_FIELDS | {'q', 'city', 'sort'})
+    q = qp.get('q') or None
+    city = qp.get('city') or None
+    if q and len(q) > 80:
+        errors['q'] = 'q doit faire au plus 80 caractères.'
+    if city and len(city) > 60:
+        errors['city'] = 'city doit faire au plus 60 caractères.'
+    sort = qp.get('sort') or None
+    if sort and sort not in SHOP_SORTS:
+        errors['sort'] = 'Tri inconnu.'
+    fail(errors)
+    return {'page': page, 'pageSize': size, 'q': q, 'city': city, 'sort': sort}

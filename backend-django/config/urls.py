@@ -6,6 +6,8 @@ from core.legacy_proxy import relay
 urlpatterns = [
     path('api/v1/', include('catalog.urls')),
     path('api/v1/', include('accounts.urls')),
+    path('api/v1/', include('shops.urls')),
+    path('api/v1/', include('favorites.urls')),
     # En dernier : tout ce qui n'est pas encore réécrit part vers l'API Node (LEGACY_API_URL).
     re_path(r'^api/v1/(?P<rest>.+)$', relay),
 ]

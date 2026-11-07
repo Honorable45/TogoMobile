@@ -7,6 +7,9 @@ from datetime import UTC
 
 from django.db.models import Prefetch
 
+from django.conf import settings
+
+from .errors import ApiError
 from .models import Product, ProductMedia, Promotion
 from .storage import public_url
 from .visibility import running_promotion_q
@@ -107,3 +110,11 @@ def paged(items, total: int, page: int, page_size: int):
         'total': total,
         'totalPages': max(1, -(-total // page_size)),
     }
+
+
+def window(page: int, page_size: int) -> slice:
+    """Tranche d'une page, bornée comme skipTake côté Node (PAGINATION_MAX_OFFSET)."""
+    skip = (page - 1) * page_size
+    if skip > settings.PAGINATION_MAX_OFFSET:
+        raise ApiError(400, 'Page trop éloignée : affinez votre recherche avec les filtres.')
+    return slice(skip, skip + page_size)

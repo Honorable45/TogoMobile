@@ -8,9 +8,11 @@ Les adresses et les réponses JSON sont identiques à l'API Node : le site Next.
 
 | Module | État |
 |---|---|
-| Catalogue public : accueil, recherche, fiche, similaires, avis publics, clic WhatsApp, vues | ✅ identique à Node (`scripts/compare_api.py` : 26/26) |
+| Catalogue public : accueil, recherche, fiche, similaires, avis publics, clic WhatsApp, vues | ✅ identique à Node (`scripts/compare_api.py` : 42/42 avec les boutiques) |
 | Comptes et sessions (`/auth/*`) : mots de passe et cookie compatibles | ✅ (`scripts/compare_auth.py` : 19/19) |
-| Boutiques publiques, favoris, signalements | à faire |
+| Boutiques publiques (`/shops`, `/shops/:slug`) | ✅ identique à Node (dans `compare_api.py`) |
+| Favoris (`/me/favorites/*`) | ✅ (`scripts/compare_favorites.py` : 22/22, ajouts et retraits croisés entre les deux API) |
+| Signalements | à faire |
 | Espace vendeur : produits, médias, promotions, ventes | à faire |
 | Avis par QR code (vérification, dépôt) | à faire |
 | Administration (modération, publicités, référentiels, statistiques) | à faire |
@@ -30,6 +32,9 @@ est transmise à l'API Node : le site reste entièrement utilisable. À retirer 
 - Requêtes modifiantes venues d'une autre origine refusées ; CORS limité à `CORS_ORIGINS` et `ADMIN_URL`.
 - En-têtes : nosniff, X-Frame-Options, Referrer-Policy, COOP ; HSTS et redirection HTTPS en production.
 - Corps JSON limités à 200 Ko ; erreurs internes jamais détaillées au client.
+- Paramètres d'adresse inconnus refusés (400 « Champ non autorisé »), comme le ValidationPipe Node.
+- `DB_CONN_MAX_AGE` : connexions PostgreSQL persistantes (60 s par défaut en production, 0 en `DJANGO_DEBUG` :
+  le serveur de développement ouvre un fil par requête et saturerait PostgreSQL).
 - `python scripts/security_check.py` : tests d'attaque de base (attendre une minute entre deux exécutions).
 
 ## Lancer en local

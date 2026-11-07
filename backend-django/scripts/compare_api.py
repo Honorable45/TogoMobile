@@ -85,6 +85,22 @@ def main():
         f'/shops/{shop}/reviews',
         '/products/n-existe-pas',
         '/products/n-existe-pas/similar',
+        '/catalog/products?foo=1',
+        '/shops',
+        '/shops?sort=rating',
+        '/shops?sort=name&pageSize=2&page=2',
+        '/shops?q=demo',
+        '/shops?q=LOM%C3%89',
+        '/shops?city=lom%C3%A9',
+        '/shops?city=Kara&sort=name',
+        '/shops?sort=inconnu&pageSize=99',
+        '/shops?q=50%25_',
+        '/shops?foo=1',
+        '/shops?page=1000',
+        f'/shops/{shop}',
+        '/shops/n-existe-pas',
+        '/me/favorites/ids',
+        '/me/favorites/products',
     ]
     failures = 0
     for p in paths:
