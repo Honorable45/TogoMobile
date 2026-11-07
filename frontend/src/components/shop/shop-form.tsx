@@ -5,6 +5,7 @@ import { api, ClientApiError, errorMessage } from '@/lib/api-client';
 import { Button } from '../ui/button';
 import { Field, Input, Select, Textarea } from '../ui/field';
 import { Alert } from '../ui/misc';
+import { rules, useFormCheck, type Schema } from '@/lib/validation';
 
 export const TOGO_CITIES = ['Lomé', 'Kara', 'Sokodé', 'Atakpamé', 'Kpalimé', 'Tsévié', 'Aného', 'Dapaong', 'Bassar', 'Mango', 'Notsé', 'Tabligbo', 'Vogan', 'Badou', 'Sotouboua'];
 
@@ -28,6 +29,20 @@ const SOCIAL_FIELDS = [
   { key: 'website', label: 'Site web', placeholder: 'https://…' },
 ] as const;
 
+/** Vérifications faites dans le navigateur avant l'envoi (mêmes limites que le serveur, shop.dto.ts). */
+const SHOP_RULES: Schema = {
+  name: [rules.required('Indiquez le nom de la boutique.'), rules.length(2, 60, 'Le nom de la boutique doit contenir entre 2 et 60 caractères.')],
+  description: [rules.max(600, 'La description fait 600 caractères au maximum.')],
+  // « Nom de la ville » n'existe que si « Autre ville… » est choisi.
+  cityOther: [(v, form) => (form.has('cityOther') && (v.trim().length < 2 || v.trim().length > 60) ? 'Indiquez le nom de la ville (2 à 60 caractères).' : undefined)],
+  district: [rules.max(80)],
+  address: [rules.max(160)],
+  openingHours: [rules.max(120)],
+  whatsapp: [rules.required('Indiquez le numéro WhatsApp de la boutique.'), rules.phone()],
+  phone: [rules.phone()],
+  ...Object.fromEntries(SOCIAL_FIELDS.map((f) => [`social_${f.key}`, [rules.max(300), rules.url()]])),
+};
+
 /** Formulaire de boutique : demande d'ouverture (POST) ou modification (PATCH). */
 export function ShopForm({
   initial,
@@ -46,9 +61,13 @@ export function ShopForm({
   const [saved, setSaved] = useState(false);
   const knownCity = !initial?.city || TOGO_CITIES.includes(initial.city);
   const [city, setCity] = useState(knownCity ? (initial?.city ?? 'Lomé') : 'Autre');
+  const form = useFormCheck(SHOP_RULES);
+  // Erreur d'un champ : d'abord celle du navigateur, sinon celle renvoyée par le serveur.
+  const err = (field: string, serverField = field) => form.errors[field] ?? errors[serverField];
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!form.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
     const text = (k: string) => {
       const v = String(fd.get(k) ?? '').trim();
@@ -84,13 +103,13 @@ export function ShopForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-6" noValidate>
+    <form onSubmit={submit} onChange={form.onChange} className="space-y-6" noValidate>
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <legend className="mb-3 text-base font-bold">Votre boutique</legend>
-        <Field label="Nom commercial" error={errors.name} className="sm:col-span-2" hint={sensitiveNotice ? 'Un changement de nom est vérifié par l’équipe avant d’être affiché.' : undefined}>
+        <Field label="Nom commercial" error={err('name')} className="sm:col-span-2" hint={sensitiveNotice ? 'Un changement de nom est vérifié par l’équipe avant d’être affiché.' : undefined}>
           {(p) => <Input {...p} name="name" defaultValue={initial?.name} required maxLength={60} />}
         </Field>
-        <Field label="Présentation courte" error={errors.description} optional className="sm:col-span-2" hint="Spécialités, services (réparation, déblocage…), garanties proposées. 600 caractères maximum.">
+        <Field label="Présentation courte" error={err('description')} optional className="sm:col-span-2" hint="Spécialités, services (réparation, déblocage…), garanties proposées. 600 caractères maximum.">
           {(p) => <Textarea {...p} name="description" defaultValue={initial?.description ?? ''} maxLength={600} rows={3} />}
         </Field>
       </fieldset>
@@ -106,27 +125,27 @@ export function ShopForm({
           )}
         </Field>
         {city === 'Autre' ? (
-          <Field label="Nom de la ville">{(p) => <Input {...p} name="cityOther" defaultValue={knownCity ? '' : initial?.city} required />}</Field>
+          <Field label="Nom de la ville" error={err('cityOther', 'city')}>{(p) => <Input {...p} name="cityOther" defaultValue={knownCity ? '' : initial?.city} required />}</Field>
         ) : (
-          <Field label="Quartier" error={errors.district} optional>{(p) => <Input {...p} name="district" defaultValue={initial?.district ?? ''} placeholder="Déckon, Bè, Adidogomé…" />}</Field>
+          <Field label="Quartier" error={err('district')} optional>{(p) => <Input {...p} name="district" defaultValue={initial?.district ?? ''} placeholder="Déckon, Bè, Adidogomé…" />}</Field>
         )}
         {city === 'Autre' && (
-          <Field label="Quartier" error={errors.district} optional>{(p) => <Input {...p} name="district" defaultValue={initial?.district ?? ''} />}</Field>
+          <Field label="Quartier" error={err('district')} optional>{(p) => <Input {...p} name="district" defaultValue={initial?.district ?? ''} />}</Field>
         )}
-        <Field label="Adresse ou repère" error={errors.address} optional className="sm:col-span-2">
+        <Field label="Adresse ou repère" error={err('address')} optional className="sm:col-span-2">
           {(p) => <Input {...p} name="address" defaultValue={initial?.address ?? ''} placeholder="Ex. : face à la pharmacie…" />}
         </Field>
-        <Field label="Horaires" error={errors.openingHours} optional className="sm:col-span-2">
+        <Field label="Horaires" error={err('openingHours')} optional className="sm:col-span-2">
           {(p) => <Input {...p} name="openingHours" defaultValue={initial?.openingHours ?? ''} placeholder="Lun–Sam 8 h–19 h" />}
         </Field>
       </fieldset>
 
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <legend className="mb-3 text-base font-bold">Contact</legend>
-        <Field label="Numéro WhatsApp professionnel" error={errors.whatsapp} hint={sensitiveNotice ? 'Les clients vous contacteront sur ce numéro. Un changement est vérifié par l’équipe.' : 'Les clients vous contacteront sur ce numéro.'}>
+        <Field label="Numéro WhatsApp professionnel" error={err('whatsapp')} hint={sensitiveNotice ? 'Les clients vous contacteront sur ce numéro. Un changement est vérifié par l’équipe.' : 'Les clients vous contacteront sur ce numéro.'}>
           {(p) => <Input {...p} name="whatsapp" type="tel" inputMode="tel" defaultValue={initial?.whatsapp} placeholder="+228 90 12 34 56" required />}
         </Field>
-        <Field label="Téléphone fixe ou autre" error={errors.phone} optional>
+        <Field label="Téléphone fixe ou autre" error={err('phone')} optional>
           {(p) => <Input {...p} name="phone" type="tel" inputMode="tel" defaultValue={initial?.phone ?? ''} />}
         </Field>
       </fieldset>
@@ -135,7 +154,7 @@ export function ShopForm({
         <legend className="mb-1 text-base font-bold">Réseaux sociaux</legend>
         <p className="text-sm text-muted sm:col-span-2">Facultatif. Collez l’adresse complète de votre page (commençant par https://).</p>
         {SOCIAL_FIELDS.map((s) => (
-          <Field key={s.key} label={s.label} error={errors[`socialLinks.${s.key}`]} optional>
+          <Field key={s.key} label={s.label} error={err(`social_${s.key}`, `socialLinks.${s.key}`)} optional>
             {(p) => <Input {...p} name={`social_${s.key}`} type="url" inputMode="url" defaultValue={initial?.socialLinks?.[s.key] ?? ''} placeholder={s.placeholder} />}
           </Field>
         ))}

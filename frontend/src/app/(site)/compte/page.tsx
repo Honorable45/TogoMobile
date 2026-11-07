@@ -10,6 +10,7 @@ import { Alert, Card, Skeleton } from '@/components/ui/misc';
 import { api, ClientApiError, errorMessage } from '@/lib/api-client';
 import { formatDateTime } from '@/lib/format';
 import { useApi, useRequireUser } from '@/lib/hooks';
+import { rules, useFormCheck, type Schema } from '@/lib/validation';
 
 interface SessionRow {
   id: string;
@@ -26,12 +27,27 @@ function device(ua: string | null) {
   return `${browser} sur ${os}`;
 }
 
+// Vérifications faites dans le navigateur avant l'envoi (mêmes règles que le serveur).
+const PROFILE_RULES: Schema = {
+  name: [rules.required('Indiquez votre nom.'), rules.length(2, 80, 'Le nom doit contenir entre 2 et 80 caractères.')],
+  // Il faut garder au moins un moyen de se connecter : e-mail ou téléphone.
+  email: [rules.email(), (v, form) => (v.trim() || String(form.get('phone') ?? '').trim() ? undefined : 'Gardez au moins un e-mail ou un numéro de téléphone.')],
+  phone: [rules.phone()],
+};
+const PASSWORD_RULES: Schema = {
+  currentPassword: [rules.required('Indiquez votre mot de passe actuel.')],
+  newPassword: [rules.password()],
+  confirm: [rules.sameAs('newPassword', 'Les deux nouveaux mots de passe ne correspondent pas.')],
+};
+
 export default function AccountPage() {
   const { ready } = useRequireUser();
   const { user, refresh, logout } = useSession();
   const sessions = useApi<SessionRow[]>(ready ? '/auth/sessions' : null);
   const [profile, setProfile] = useState<{ loading?: boolean; ok?: boolean; error?: string; errors?: Record<string, string> }>({});
   const [pwd, setPwd] = useState<{ loading?: boolean; ok?: boolean; error?: string }>({});
+  const profileForm = useFormCheck(PROFILE_RULES);
+  const pwdForm = useFormCheck(PASSWORD_RULES);
 
   if (!ready || !user) {
     return (
@@ -44,6 +60,7 @@ export default function AccountPage() {
 
   const saveProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!profileForm.check(e.currentTarget)) return;
     const fd = new FormData(e.currentTarget);
     setProfile({ loading: true });
     try {
@@ -51,6 +68,7 @@ export default function AccountPage() {
       await refresh();
       setProfile({ ok: true });
     } catch (err) {
+      if (err instanceof ClientApiError) profileForm.setErrors(err.errors);
       setProfile({ error: errorMessage(err), errors: err instanceof ClientApiError ? err.errors : {} });
     }
   };
@@ -58,8 +76,8 @@ export default function AccountPage() {
   const changePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
+    if (!pwdForm.check(form)) return;
     const fd = new FormData(form);
-    if (fd.get('newPassword') !== fd.get('confirm')) return setPwd({ error: 'Les deux nouveaux mots de passe ne correspondent pas.' });
     setPwd({ loading: true });
     try {
       await api('/auth/password/change', { body: { currentPassword: fd.get('currentPassword'), newPassword: fd.get('newPassword') } });
@@ -78,14 +96,14 @@ export default function AccountPage() {
 
       <Card className="rounded-3xl p-6 sm:p-8">
         <h2 className="display mb-5 text-2xl">Informations personnelles</h2>
-        <form onSubmit={saveProfile} className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nom complet" error={profile.errors?.name} className="sm:col-span-2">
+        <form onSubmit={saveProfile} onChange={profileForm.onChange} noValidate className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nom complet" error={profileForm.errors.name} className="sm:col-span-2">
             {(p) => <Input {...p} name="name" defaultValue={user.name} required />}
           </Field>
-          <Field label="E-mail" error={profile.errors?.email} optional>
+          <Field label="E-mail" error={profileForm.errors.email} optional>
             {(p) => <Input {...p} name="email" type="email" defaultValue={user.email ?? ''} />}
           </Field>
-          <Field label="Téléphone" error={profile.errors?.phone} optional>
+          <Field label="Téléphone" error={profileForm.errors.phone} optional>
             {(p) => <Input {...p} name="phone" type="tel" defaultValue={user.phone ?? ''} />}
           </Field>
           <div className="space-y-3 sm:col-span-2">
@@ -98,14 +116,14 @@ export default function AccountPage() {
 
       <Card className="rounded-3xl p-6 sm:p-8">
         <h2 className="display mb-5 text-2xl">Mot de passe</h2>
-        <form onSubmit={changePassword} className="grid gap-4 sm:grid-cols-2">
-          <Field label="Mot de passe actuel" className="sm:col-span-2">
+        <form onSubmit={changePassword} onChange={pwdForm.onChange} noValidate className="grid gap-4 sm:grid-cols-2">
+          <Field label="Mot de passe actuel" error={pwdForm.errors.currentPassword} className="sm:col-span-2">
             {(p) => <Input {...p} name="currentPassword" type="password" autoComplete="current-password" required />}
           </Field>
-          <Field label="Nouveau mot de passe" hint="8 caractères minimum, dont une lettre et un chiffre.">
+          <Field label="Nouveau mot de passe" hint="8 caractères minimum, dont une lettre et un chiffre." error={pwdForm.errors.newPassword}>
             {(p) => <Input {...p} name="newPassword" type="password" autoComplete="new-password" required />}
           </Field>
-          <Field label="Confirmation">{(p) => <Input {...p} name="confirm" type="password" autoComplete="new-password" required />}</Field>
+          <Field label="Confirmation" error={pwdForm.errors.confirm}>{(p) => <Input {...p} name="confirm" type="password" autoComplete="new-password" required />}</Field>
           <div className="space-y-3 sm:col-span-2">
             {pwd.ok && <Alert tone="success">Mot de passe modifié. Vos autres appareils ont été déconnectés.</Alert>}
             {pwd.error && <Alert tone="danger">{pwd.error}</Alert>}
