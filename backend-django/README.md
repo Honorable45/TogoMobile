@@ -9,7 +9,7 @@ Les adresses et les réponses JSON sont identiques à l'API Node : le site Next.
 | Module | État |
 |---|---|
 | Catalogue public : accueil, recherche, fiche, similaires, avis publics, clic WhatsApp, vues | ✅ identique à Node (`scripts/compare_api.py` : 26/26) |
-| Comptes et sessions (`/auth/*`) | à faire |
+| Comptes et sessions (`/auth/*`) : mots de passe et cookie compatibles | ✅ (`scripts/compare_auth.py` : 19/19) |
 | Boutiques publiques, favoris, signalements | à faire |
 | Espace vendeur : produits, médias, promotions, ventes | à faire |
 | Avis par QR code (vérification, dépôt) | à faire |
@@ -29,6 +29,8 @@ Puis lancer le site sur cette API : `API_URL=http://localhost:8000 pnpm --filter
 
 Variables reprises de l'API Node : `DATABASE_URL`, `API_URL`, `WEB_URL`, `STORAGE_DRIVER` (`local`, `s3`, `cloudinary`),
 `S3_PUBLIC_URL`, `CLOUDINARY_URL`, `CLOUDINARY_FOLDER`, `PAGINATION_MAX_OFFSET`, `REDIS_URL`.
+Comptes : `APP_SECRET` (même valeur que Node), `SESSION_COOKIE_NAME`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SAMESITE`,
+`SESSION_DAYS`, `LOGIN_MAX_FAILURES`, `LOGIN_LOCK_MINUTES`, `CORS_ORIGINS`, `ADMIN_URL`, `MAIL_DRIVER`, `MAIL_FROM`, `RESEND_API_KEY`.
 Propres à Django : `DJANGO_SECRET_KEY` (obligatoire en production), `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`.
 
 ## Vérifier l'équivalence avec l'API Node
