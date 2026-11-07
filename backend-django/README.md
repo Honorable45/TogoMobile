@@ -16,6 +16,22 @@ Les adresses et les réponses JSON sont identiques à l'API Node : le site Next.
 | Administration (modération, publicités, référentiels, statistiques) | à faire |
 | Tâches de fond (file `Job`), purge du stockage | à faire |
 
+## Pendant la migration : relais vers l'API Node
+
+Avec `LEGACY_API_URL=http://localhost:4000` (adresse de l'API Node), toute route pas encore réécrite en Django
+est transmise à l'API Node : le site reste entièrement utilisable. À retirer quand tout sera migré.
+
+## Sécurité
+
+- Limitation de débit par IP pour tous, connectés compris (`RATE_LIMIT_PER_MINUTE`, plus des limites propres à la
+  connexion, l'inscription et les mots de passe). IP lue derrière `TRUST_PROXY_HOPS` proxys de confiance (1 par défaut,
+  comme l'API Node) : un faux `X-Forwarded-For` ne contourne pas la limite.
+- Verrouillage du compte après `LOGIN_MAX_FAILURES` échecs, pendant `LOGIN_LOCK_MINUTES`.
+- Requêtes modifiantes venues d'une autre origine refusées ; CORS limité à `CORS_ORIGINS` et `ADMIN_URL`.
+- En-têtes : nosniff, X-Frame-Options, Referrer-Policy, COOP ; HSTS et redirection HTTPS en production.
+- Corps JSON limités à 200 Ko ; erreurs internes jamais détaillées au client.
+- `python scripts/security_check.py` : tests d'attaque de base (attendre une minute entre deux exécutions).
+
 ## Lancer en local
 
 ```bash
