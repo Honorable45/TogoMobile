@@ -48,6 +48,9 @@ DJANGO_DEBUG=1 API_URL=http://localhost:4000 WEB_URL=http://localhost:3000 .venv
 
 Puis lancer le site sur cette API : `API_URL=http://localhost:8000 pnpm --filter frontend dev`.
 
+Photos en stockage local, visibles sur le PC **et** sur un téléphone : lancer Django avec `MEDIA_BASE_URL=`
+(adresses relatives `/media/…`) et le site avec `MEDIA_ORIGIN=http://localhost:4000` (le site relaie `/media/`).
+
 Variables reprises de l'API Node : `DATABASE_URL`, `API_URL`, `WEB_URL`, `STORAGE_DRIVER` (`local`, `s3`, `cloudinary`),
 `S3_PUBLIC_URL`, `CLOUDINARY_URL`, `CLOUDINARY_FOLDER`, `PAGINATION_MAX_OFFSET`, `REDIS_URL`.
 Comptes : `APP_SECRET` (même valeur que Node), `SESSION_COOKIE_NAME`, `SESSION_COOKIE_DOMAIN`, `SESSION_COOKIE_SAMESITE`,

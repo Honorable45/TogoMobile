@@ -51,6 +51,10 @@ def normalize(path, body):
     """Accueil : les promotions qui finissent au même instant n'ont pas d'ordre garanti côté Node."""
     if path == '/home' and isinstance(body, dict):
         body['promotions'] = sorted(body.get('promotions') or [], key=lambda c: (c['promotion']['endsAt'], c['promotion']['id']))
+        # Nouveautés et populaires : Node ne départage pas deux annonces publiées au même instant
+        # (Django les range par identifiant). On compare donc le contenu, pas l'ordre des ex æquo.
+        for key in ('newest', 'popular'):
+            body[key] = sorted(body.get(key) or [], key=lambda c: c['id'])
     return body
 
 

@@ -43,11 +43,11 @@ def home():
     brands = list(
         Brand.objects.filter(is_active=True, featured=True).order_by('sort_order', 'name').values('id', 'name', 'slug', 'logo_url')
     )
-    newest = card_queryset().filter(listed_product_q(), availability='AVAILABLE').order_by('-published_at')[:8]
+    newest = card_queryset().filter(listed_product_q(), availability='AVAILABLE').order_by('-published_at', 'id')[:8]  # id : ordre stable entre deux annonces publiées au même instant
     popular = (
         card_queryset()
         .filter(listed_product_q(), availability='AVAILABLE', view_count__gt=0)
-        .order_by('-whatsapp_clicks', '-view_count')[:8]
+        .order_by('-whatsapp_clicks', '-view_count', 'id')[:8]
     )
     # Départage stable par identifiant quand plusieurs promotions finissent au même instant.
     promo_rows = list(Promotion.objects.filter(running_promotion_q(now)).order_by('ends_at', 'id')[:8])

@@ -26,6 +26,10 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [h.strip() for h in env('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
 API_URL = env('API_URL', 'http://localhost:4000').rstrip('/')
+# Début des adresses des photos en stockage local. Par défaut : l'adresse de l'API.
+# En développement, MEDIA_BASE_URL="" donne des adresses relatives (/media/…) que le site relaie :
+# les photos s'affichent alors aussi bien sur le PC que sur un téléphone.
+MEDIA_BASE_URL = env('MEDIA_BASE_URL', API_URL).rstrip('/')
 WEB_URL = env('WEB_URL', 'http://localhost:3000').rstrip('/')
 PAGINATION_MAX_OFFSET = int(env('PAGINATION_MAX_OFFSET', '5000'))
 # Relais de migration vers l'API Node pour les routes pas encore réécrites (vide = désactivé).

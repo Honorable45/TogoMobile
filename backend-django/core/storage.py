@@ -1,6 +1,6 @@
 """
 Adresse publique d'un fichier stocké, selon le pilote (STORAGE_DRIVER) : mêmes URL que l'API Node.
-  - local      : {API_URL}/media/{clé}
+  - local      : {MEDIA_BASE_URL}/media/{clé}  (MEDIA_BASE_URL vaut API_URL par défaut)
   - s3         : {S3_PUBLIC_URL}/{clé}
   - cloudinary : {livraison}/{cloud}/{image|video}/upload/{dossier}/{clé sans extension}.{ext}
 """
@@ -42,4 +42,4 @@ def public_url(key: str | None) -> str | None:
         if not kind:
             return None
         return f"{s['cloudinary_delivery_base']}/{_cloudinary()}/{kind}/upload/{s['cloudinary_folder']}/{base}.{ext}"
-    return f"{settings.API_URL}/media/{key}"
+    return f"{settings.MEDIA_BASE_URL}/media/{key}"
